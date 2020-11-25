@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>p2p</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+      #map {
+        height: 400px;
+        /* The height is 400 pixels */
+        width: 100%;
+        /* The width is the width of the web page */
+      }
+    </style>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap&libraries=&v=weekly"
+      defer
+    ></script>
+  </head>
+  <body>
+    <h3>My Google Maps Demo</h3>
+    <!--The div element for the map -->
+    <div id="map"></div>
+    <script>
+      var map;
+      $(document).ready(function () {
+        var geojson;
+        
+      });
+
+      function initMap() {
+        
+        // The location of Uluru
+        const israel = { lat: 32.0879122, lng: 34.7272058 };
+        // The map, centered at Uluru
+        map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 8,
+          center: israel,
+        });
+        var settings = {
+          url: "http://localhost:3000/apilogin/0",
+          method: "POST",
+          timeout: 0,
+        };
+
+        $.ajax(settings).done(function (response) {
+          console.log(response);
+          map.data.addGeoJson(response.plotsJson);
+          for (let i = 0; i < response.plotsJson.features.length; i++) {
+            const coords = response.plotsJson.features[i].geometry.coordinates;
+            console.log("coords",coords[0][1][0])
+            const latLng = new google.maps.LatLng(coords[0][0][1], coords[0][0][0]);
+            new google.maps.Marker({
+              position: latLng,
+              map: map,
+            });
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
