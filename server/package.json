@@ -1,0 +1,19 @@
+{
+  "name": "serverside",
+  "version": "1.0.0",
+  "description": "blog server side",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tmcw/togeojson": "^4.2.0",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "sqlite3": "^4.2.0",
+    "xmldom": "^0.4.0"
+  }
+}
