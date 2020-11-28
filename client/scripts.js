@@ -92,6 +92,7 @@ function initMap() {
         position: latLng,
         map: map,
       });
-    }
+    };
   });
+  
 }

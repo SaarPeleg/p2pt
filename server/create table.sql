@@ -3,6 +3,18 @@
 	userId INTEGER PRIMARY KEY AUTOINCREMENT,
 	plots_name Text DEFAULT "Map1.kml"
 ) */
-DROP TABLE IF EXISTS Comments;
-DROP TABLE IF EXISTS Posts;
-DROP TABLE IF EXISTS Writers;
+/*
+DROP table IF EXISTS Plots;
+CREATE TABLE IF NOT EXISTS Plots (
+	regIg INTEGER PRIMARY KEY AUTOINCREMENT,
+	userId INTEGER,
+	plotId Text,
+	plotName Text Not Null,
+	plotSize Integer Not Null,
+	soilType Text Not Null,
+	product Text,
+	year Text,
+	productAmount REAL,
+	profit REAL
+);
+*/
