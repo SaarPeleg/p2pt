@@ -1,6 +1,63 @@
 var map;
 $(document).ready(function () {
   var geojson;
+
+  var ctx = document.getElementById('plotHistory');
+  var plotHistory = new Chart(ctx, {
+    type: 'line',
+    data:
+    {
+      datasets: [{
+        label:"avocado",
+        borderColor: 'green',
+        showLine: true,
+        fill: false,
+        data:[10,20,30,40,50,60]
+      },
+      {
+        label:"banana",
+        borderColor: 'yellow',
+        showLine: true,
+        fill: false,
+        data:[10,25,5,17,80,50]
+      },
+      {
+        label:"orange",
+        borderColor: 'orange',
+        showLine: true,
+        fill: false,
+        data:[50,40,30,15,50,2]
+      }
+    
+    ],
+     
+      labels: ['2015', '2016', '2017', '2018', '2019', '2020']
+    },
+    
+    options: {
+      responsive: false
+    },
+    scales: {
+      xAxes: [{
+        type: 'time',
+        time: {
+          unit: 'year'
+        },
+        scaleLabel: {
+          display: true,
+          labelString: 'Date'
+        }
+      }],
+      yAxes: [{
+        scaleLabel: {
+          display: true,
+          labelString: 'value'
+        }
+      }]
+    }
+  }
+  
+  );
 });
 
 function initMap() {
