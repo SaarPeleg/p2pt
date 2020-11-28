@@ -1,0 +1,11 @@
+#map {
+  display: block;
+  margin: auto;
+  height: 400px;
+  /* The height is 400 pixels */
+  width: 400px;
+  /* The width is the width of the web page */
+}
+body {
+  text-align: center;
+}
