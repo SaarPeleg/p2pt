@@ -80,4 +80,49 @@ app.post("/apilogin/:userId", async (req, res) => {
   db.close();
 });
 
+app.post("/apigetplotdata/:userId/:year", async (req, res) => {
+  var response = [];
+  var userIds = null;
+  let db = new sqlite3.Database("./sqlitedatabase.db");
+  try {
+    db.each(
+      "SELECT * from Plots where userId = ? AND (year BETWEEN ? and ?)",
+      [req.params.userId,req.params.year-5,req.params.year-0+5],
+      function (err, row) {
+        response.push(row);
+      },
+      function () {
+        var after=req.params.year-0+5;
+        var before=req.params.year-5;
+        console.log("year range: "+"start year - "+req.params.year+" - "+before+"-"+after);
+        // this callback is executed when the query completed
+        console.log("~~~New Plots Data Fetch Request~~~");
+        console.log("user id requested: " + req.params.userId);
+        try {
+          if (response.length > 0) {
+            res.status(200).json({
+              status: "Success",
+              rows: response,
+            });
+          } else {
+            console.error("Failed to find plot data for user with id - " + req.params.userId);
+            res.status(200).json({
+              status: "Failed to find plot data for user with id - " + req.params.userId+" in the years "+req.params.year-3+"-"+req.params.year+3,
+            });
+          }
+          console.log("~~~End Plots Data Fetch Request~~~");
+        } catch {
+          res.status(200).json({
+            status: "invalid request, resource not found",
+          });
+        }
+      }
+    );
+  } catch {
+    db.close();
+    return console.log("ERROR");
+  }
+  db.close();
+});
+
 app.listen(3000, () => console.log("server running on port 3000, "));
