@@ -80,19 +80,37 @@ function initMap() {
       center: israel,
     });
     map.data.addGeoJson(response.plotsJson);
+    map.data.setStyle(function(feature) {
+      var color = 'red';
+      if (feature.getProperty('isColorful')) {
+        color = feature.getProperty('color');
+      }
+      return ({
+        fillColor: color,
+        strokeColor: color,
+        strokeWeight: 2
+      });
+    });
     console.log("data", map.data);
     for (let i = 0; i < response.plotsJson.features.length; i++) {
       const coords = response.plotsJson.features[i].geometry.coordinates;
       console.log("coords", coords[0][1][0]);
       const latLng = new google.maps.LatLng(coords[0][0][1], coords[0][0][0]);
-     
+      
       map.center = latLng;
       map.zoom = 10;
-      new google.maps.Marker({
+      /*new google.maps.Marker({
         position: latLng,
         map: map,
-      });
+      });*/
     };
+
+    
+    map.data.addListener("click", (event) => {
+      document.getElementById("PlotPage").textContent = event.feature.getProperty(
+        "name"
+      );
+    });
   });
   
 }
