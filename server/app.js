@@ -29,7 +29,7 @@ app.use(function (req, res, next) {
   next();
 });
 
-app.post("/apilogin/:userId", async (req, res) => {
+app.get("/apilogin", async (req, res) => {
   var response = [];
   var userIds = null;
   var plots = null;
@@ -37,7 +37,7 @@ app.post("/apilogin/:userId", async (req, res) => {
   try {
     db.each(
       "SELECT * from Locations where userId = ?",
-      [req.params.userId],
+      [req.query.userId],
       function (err, row) {
         response.push(row);
         userIds = row.userId;
@@ -46,7 +46,7 @@ app.post("/apilogin/:userId", async (req, res) => {
       function () {
         // this callback is executed when the query completed
         console.log("~~~New Fetch Request~~~");
-        console.log("user id requested: " + req.params.userId);
+        console.log("user id requested: " + req.query.userId);
         try {
           if (response.length > 0) {
             var kml = new DOMParser().parseFromString(
@@ -60,9 +60,9 @@ app.post("/apilogin/:userId", async (req, res) => {
               plotsJson: convertedWithStyles,
             });
           } else {
-            console.error("Failed to find user with id - " + req.params.userId);
+            console.error("Failed to find user with id - " + req.query.userId);
             res.status(200).json({
-              status: "Failed to find user with id - " + req.params.userId,
+              status: "Failed to find user with id - " + req.query.userId,
             });
           }
           console.log("~~~End Fetch Request~~~");
@@ -80,24 +80,25 @@ app.post("/apilogin/:userId", async (req, res) => {
   db.close();
 });
 
-app.post("/apigetplotdata/:userId/:year", async (req, res) => {
+app.get("/apigetplotdata", async (req, res) => {
   var response = [];
-  var userIds = null;
+  var year=new Date().getFullYear();
   let db = new sqlite3.Database("./sqlitedatabase.db");
   try {
     db.each(
       "SELECT * from Plots where userId = ? AND (year BETWEEN ? and ?)",
-      [req.params.userId,req.params.year-5,req.params.year-0+5],
+      [req.query.userId,year-5,year-0+5],
       function (err, row) {
         response.push(row);
       },
       function () {
-        var after=req.params.year-0+5;
-        var before=req.params.year-5;
-        console.log("year range: "+"start year - "+req.params.year+" - "+before+"-"+after);
-        // this callback is executed when the query completed
+        var after=year-0+5;
+        var before=year-5;
+        
         console.log("~~~New Plots Data Fetch Request~~~");
-        console.log("user id requested: " + req.params.userId);
+        console.log("year range: "+"start year - "+year+" - "+before+"-"+after);
+        // this callback is executed when the query completed
+        console.log("user id requested: " + req.query.userId);
         try {
           if (response.length > 0) {
             res.status(200).json({
@@ -105,9 +106,9 @@ app.post("/apigetplotdata/:userId/:year", async (req, res) => {
               rows: response,
             });
           } else {
-            console.error("Failed to find plot data for user with id - " + req.params.userId);
+            console.error("Failed to find plot data for user with id - " + req.query.userId);
             res.status(200).json({
-              status: "Failed to find plot data for user with id - " + req.params.userId+" in the years "+req.params.year-3+"-"+req.params.year+3,
+              status: "Failed to find plot data for user with id - " + req.query.userId+" in the years "+year-3+"-"+year+3,
             });
           }
           console.log("~~~End Plots Data Fetch Request~~~");

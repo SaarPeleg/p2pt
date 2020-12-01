@@ -69,7 +69,7 @@ function initMap() {
     center: israel,
   });*/
   var settings = {
-    url: "http://localhost:3000/apilogin/0",
+    url: "http://localhost:3000/apilogin?userId=0",
     method: "POST",
     timeout: 0,
   };
