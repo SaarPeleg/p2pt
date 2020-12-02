@@ -18,3 +18,4 @@ CREATE TABLE IF NOT EXISTS Plots (
 	profit REAL
 );
 */
+UPDATE Plots SET product='Banana' where product='Bananas';

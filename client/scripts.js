@@ -70,7 +70,7 @@ function initMap() {
   });*/
   var settings = {
     url: "http://localhost:3000/apilogin?userId=0",
-    method: "POST",
+    method: "GET",
     timeout: 0,
   };
   $.ajax(settings).done(function (response) {
