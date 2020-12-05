@@ -79,36 +79,115 @@ app.get("/apilogin", async (req, res) => {
   }
   db.close();
 });
-
+function getRandomColor() {
+  var letters = "0123456789ABCDEF";
+  var color = "#";
+  for (var i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
 app.get("/apigetplotdata", async (req, res) => {
-  var response = [];
-  var year=new Date().getFullYear();
+  var response = {};
+  response.raw = [];
+  response.years = [];
+  var midarray = [];
+  var tosend = [];
+  var year = new Date().getFullYear();
   let db = new sqlite3.Database("./sqlitedatabase.db");
   try {
     db.each(
       "SELECT * from Plots where userId = ? AND (year BETWEEN ? and ?)",
-      [req.query.userId,year-5,year-0+5],
+      [req.query.userId, year - 5, year - 0 + 5],
       function (err, row) {
-        response.push(row);
+        response.raw.push(row);
       },
       function () {
-        var after=year-0+5;
-        var before=year-5;
-        
+        var after = year - 0 + 5;
+        var before = year - 5;
+
         console.log("~~~New Plots Data Fetch Request~~~");
-        console.log("year range: "+"start year - "+year+" - "+before+"-"+after);
+        console.log(
+          "year range: " + "start year - " + year + " - " + before + "-" + after
+        );
+        for (var i = 0; i <= after - before; i++) {
+          response.years.push(before - 0 + i);
+          //console.log(before-0+i);
+        }
+
+        midarray = response.raw.reduce(function (r, o) {
+          var k = o.plotName; // unique `loc` key
+          if (r[k] || (r[k] = []))
+            r[k].push({
+              year: o.year,
+              name: k,
+              label: o.product,
+              productAmount: o.productAmount,
+            });
+          return r;
+        }, {});
+
+        for (var key in midarray) {
+          midarray[key] = midarray[key].reduce(function (r, o) {
+            var k = o.label; // unique `loc` key
+            if (r[k] || (r[k] = []))
+              r[k].push({
+                year: o.year,
+                name: o.name,
+                label: k,
+                productAmount: o.productAmount,
+              });
+            return r;
+          }, {});
+        }
+
+        for (var key in midarray) {
+          var datasets = [];
+          
+          for (var prod in midarray[key]) {
+            var dataset = {};
+            dataset.data = [];
+            dataset.label = prod;
+            dataset.showLine = true;
+            dataset.fill = false;
+            dataset.borderColor = getRandomColor();
+            for (var i = 0; i < response.years.length; i++) {
+              dataset.data.push(0);
+            }
+            for (var i = 0; i < midarray[key][prod].length; i++) {
+              dataset.data[midarray[key][prod][i].year - before] =
+                midarray[key][prod][i].productAmount;
+                //console.log("test",key,prod,i,midarray[key][prod][i].productAmount);
+            }
+            datasets.push(dataset);
+          }
+          tosend.push({ name: key, dataarray: datasets });
+        }
+
         // this callback is executed when the query completed
         console.log("user id requested: " + req.query.userId);
         try {
-          if (response.length > 0) {
+          if (response.raw.length > 0) {
             res.status(200).json({
+              //midarray: midarray,
               status: "Success",
-              rows: response,
+              response: tosend,
+              years: response.years,
             });
           } else {
-            console.error("Failed to find plot data for user with id - " + req.query.userId);
+            console.error(
+              "Failed to find plot data for user with id - " + req.query.userId
+            );
             res.status(200).json({
-              status: "Failed to find plot data for user with id - " + req.query.userId+" in the years "+year-3+"-"+year+3,
+              status:
+                "Failed to find plot data for user with id - " +
+                req.query.userId +
+                " in the years " +
+                year -
+                3 +
+                "-" +
+                year +
+                3,
             });
           }
           console.log("~~~End Plots Data Fetch Request~~~");

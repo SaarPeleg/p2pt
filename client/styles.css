@@ -13,3 +13,63 @@ body {
   width: 100%;
   height: 400px;
 }
+
+.list-item-container{
+  border: 1px;
+  border-color: black;
+  border-style: solid;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.list-container{
+  width:100vw;
+  border-style: groove;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+#PlotList {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+#PlotList li a{
+  border: 1px solid #ddd;
+  margin-top: -1px; /* Prevent double borders */
+  background-color: #f6f6f6;
+  padding: 12px;
+  text-decoration: none;
+  font-size: 18px;
+  color: black;
+  display: block
+}
+
+#PlotList li a:hover:not(.header) {
+  background-color: #eee;
+}
+#Searchbox {
+  background-image: url('./images/searchicon.png');
+  background-position: 10px 12px;
+  background-repeat: no-repeat;
+  width: 20vw;
+  font-size: 20px;
+  padding: 12px 20px 12px 40px;
+  margin-top: 20px;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+}
+.collapsible{
+  display:none;
+  border: 1px solid #ddd;
+  margin-top: -1px; /* Prevent double borders */
+  background-color: #f6f6f6;
+  padding: 12px;
+  text-decoration: none;
+  font-size: 20px;
+  color: black;
+}
+.csstext{
+  text-align: left;
+  font-size: 20px;
+  color: black;
+}

@@ -2,18 +2,71 @@
 <html>
   <head>
     <title>p2p</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+    />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.3.0/handlebars.min.js"></script>
     <script src="./scripts.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <script src="./filter-collapsibles/collapsibles.js"></script>
+    <link rel="stylesheet" href="styles.css" />
     <script
-      src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap&libraries=&v=weekly" defer ></script>
+      src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap&libraries=&v=weekly"
+      defer
+    ></script>
   </head>
   <body>
-    <h3>P2P - my plots</h3>
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">Plan2Plant</a>
+        </div>
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="#">My Plots</a></li>
+        </ul>
+      </div>
+    </nav>
     <!--The div element for the map -->
-    <div id="map"></div>
-    <div id="PlotPage"></div>
-    <canvas id="plotHistory"></canvas>
+    <div class="megacontainer">
+      <div id="map"></div>
+      <div id="PlotPage"></div>
+
+      <div>
+        <input
+          type="text"
+          id="Searchbox"
+          onkeyup="filterPlots()"
+          placeholder="Search for plots.."
+          title="Type in a plot name"
+        />
+        <ul id="PlotList"></ul>
+      </div>
+
+      <canvas id="plotHistory"></canvas>
+    </div>
+    <script id="myplots-template" type="text/x-handlebars-template">
+      <li>
+        <a>
+          {{name}}
+        </a>
+        <div class="collapsible">
+          <div class="csstext">
+            asdasdasdasdasdasdasd
+          </div>
+        </div>
+      </li>
+      <li>
+        <a>
+          2
+        </a>
+        <div class="collapsible">
+          <div class="csstext">
+            asdasdasdasdasdasdasd
+          </div>
+        </div>
+      </li>
+    </script>
   </body>
 </html>
