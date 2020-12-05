@@ -41,32 +41,26 @@
           placeholder="Search for plots.."
           title="Type in a plot name"
         />
-        <ul id="PlotList"></ul>
+        <ul id="PlotList">
+
+        </ul>
       </div>
 
       <canvas id="plotHistory"></canvas>
     </div>
     <script id="myplots-template" type="text/x-handlebars-template">
+      {{#each this}}
       <li>
         <a>
           {{name}}
         </a>
         <div class="collapsible">
           <div class="csstext">
-            asdasdasdasdasdasdasd
+            <canvas id="{{name}}"></canvas>
           </div>
         </div>
       </li>
-      <li>
-        <a>
-          2
-        </a>
-        <div class="collapsible">
-          <div class="csstext">
-            asdasdasdasdasdasdasd
-          </div>
-        </div>
-      </li>
+      {{/each}}
     </script>
   </body>
 </html>
