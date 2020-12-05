@@ -52,6 +52,40 @@ $(document).ready(function () {
     $("li canvas").click(function (e) {
       e.stopPropagation();
     });
+    var ctx = document.getElementById("plotHistory");
+    var plotHistory = new Chart(ctx, {
+      type: 'line',
+      data:
+      {
+        datasets: response.general.dataarray,
+
+        labels: response.years
+      },
+
+      options: {
+        responsive: true
+      },
+      scales: {
+        xAxes: [{
+          type: 'time',
+          time: {
+            unit: 'year'
+          },
+          scaleLabel: {
+            display: true,
+            labelString: 'Date'
+          }
+        }],
+        yAxes: [{
+          scaleLabel: {
+            display: true,
+            labelString: 'value'
+          }
+        }]
+      }
+    }
+
+    );
     for (var i = 0; i < plotChartData.length; i++) {
       var ctx = document.getElementById(plotChartData[i].name);
       var plotHistory = new Chart(ctx, {
