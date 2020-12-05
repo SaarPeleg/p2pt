@@ -92,6 +92,7 @@ app.get("/apigetplotdata", async (req, res) => {
   response.raw = [];
   response.years = [];
   var midarray = [];
+  var general;
   var tosend = [];
   var year = new Date().getFullYear();
   let db = new sqlite3.Database("./sqlitedatabase.db");
@@ -114,6 +115,51 @@ app.get("/apigetplotdata", async (req, res) => {
           response.years.push(before - 0 + i);
           //console.log(before-0+i);
         }
+        general = response.raw.reduce(function (r, o) {
+          var k = o.product; // unique `loc` key
+          if (r[k] || (r[k] = []))
+            r[k].push({
+              year: o.year,
+              name: o.plotName,
+              label: o.product,
+              productAmount: o.productAmount,
+            });
+          return r;
+        }, {});
+        for (var key in general) {
+          var holder = {};
+          general[key].forEach(function (d) {
+            if (holder.hasOwnProperty(d.year)) {
+              holder[d.year] = holder[d.year] + d.productAmount;
+            } else {
+              holder[d.year] = d.productAmount;
+            }
+          });
+          general[key]=[];
+          for (var prop in holder) {
+            general[key].push({ year: prop, productAmount: holder[prop] });
+          }
+
+        }
+        var datasetsg = [];
+        for(var key in general){
+            var dataset = {};
+            dataset.data = [];
+            dataset.label = key;
+            dataset.showLine = true;
+            dataset.fill = false;
+            dataset.borderColor = getRandomColor();
+            for (var i = 0; i < response.years.length; i++) {
+              dataset.data.push(0);
+            }
+            for (var i = 0; i < general[key].length; i++) {
+              dataset.data[general[key][i].year - before] =
+              general[key][i].productAmount;
+              //console.log("test",key,prod,i,midarray[key][prod][i].productAmount);
+            }
+            datasetsg.push(dataset);
+        }
+        general={ name: "כללי", dataarray: datasetsg };
 
         midarray = response.raw.reduce(function (r, o) {
           var k = o.plotName; // unique `loc` key
@@ -143,7 +189,7 @@ app.get("/apigetplotdata", async (req, res) => {
 
         for (var key in midarray) {
           var datasets = [];
-          
+
           for (var prod in midarray[key]) {
             var dataset = {};
             dataset.data = [];
@@ -157,7 +203,7 @@ app.get("/apigetplotdata", async (req, res) => {
             for (var i = 0; i < midarray[key][prod].length; i++) {
               dataset.data[midarray[key][prod][i].year - before] =
                 midarray[key][prod][i].productAmount;
-                //console.log("test",key,prod,i,midarray[key][prod][i].productAmount);
+              //console.log("test",key,prod,i,midarray[key][prod][i].productAmount);
             }
             datasets.push(dataset);
           }
@@ -169,7 +215,7 @@ app.get("/apigetplotdata", async (req, res) => {
         try {
           if (response.raw.length > 0) {
             res.status(200).json({
-              //midarray: midarray,
+              general: general,
               status: "Success",
               response: tosend,
               years: response.years,
