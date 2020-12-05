@@ -18,6 +18,7 @@ $(document).ready(function () {
     var templateScript = Handlebars.compile(template);
     var html = templateScript(plotChartData);
     $("#PlotList").append(html);
+    var ctx = document.getElementById('plotHistory');
     for (var i = 0; i < plotChartData.length; i++) {
       var ctx = document.getElementById(plotChartData[i].name);
       var plotHistory = new Chart(ctx, {
