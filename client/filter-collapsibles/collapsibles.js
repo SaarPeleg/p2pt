@@ -14,8 +14,4 @@ function filterPlots() {
     }
   }
 }
-$(document).ready(function(){
-    $("li" ).on("click",function(){
-        $(this).children().last().slideToggle(200);
-    });
-});
+
