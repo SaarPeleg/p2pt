@@ -2,62 +2,65 @@ var map;
 $(document).ready(function () {
   var geojson;
 
-  var ctx = document.getElementById('plotHistory');
-  var plotHistory = new Chart(ctx, {
-    type: 'line',
-    data:
-    {
-      datasets: [{
-        label:"avocado",
-        borderColor: 'green',
-        showLine: true,
-        fill: false,
-        data:[10,20,30,40,50,60]
-      },
-      {
-        label:"banana",
-        borderColor: 'yellow',
-        showLine: true,
-        fill: false,
-        data:[10,25,5,17,80,50]
-      },
-      {
-        label:"orange",
-        borderColor: 'orange',
-        showLine: true,
-        fill: false,
-        data:[50,40,30,15,50,2]
-      }
-    
-    ],
-     
-      labels: ['2015', '2016', '2017', '2018', '2019', '2020']
-    },
-    
-    options: {
-      responsive: false
-    },
-    scales: {
-      xAxes: [{
-        type: 'time',
-        time: {
-          unit: 'year'
+  var arryOfPlotDatasets = [];
+  var datasetAll;
+  var settings = {
+    "url": "http://localhost:3000/apigetplotdata?userId=0",
+    "method": "GET",
+    "timeout": 0,
+    "async": false,
+  };
+
+  $.ajax(settings).done(function (response) {
+    console.log(response);
+    var plotChartData = response.response;
+    var template = $('#myplots-template').html();
+    var templateScript = Handlebars.compile(template);
+    var html = templateScript(plotChartData);
+    $("#PlotList").append(html);
+    for (var i = 0; i < plotChartData.length; i++) {
+      var ctx = document.getElementById(plotChartData[i].name);
+      var plotHistory = new Chart(ctx, {
+        type: 'line',
+        data:
+        {
+          datasets: plotChartData[i].dataarray,
+
+          labels: response.years
         },
-        scaleLabel: {
-          display: true,
-          labelString: 'Date'
+
+        options: {
+          responsive: true
+        },
+        scales: {
+          xAxes: [{
+            type: 'time',
+            time: {
+              unit: 'year'
+            },
+            scaleLabel: {
+              display: true,
+              labelString: 'Date'
+            }
+          }],
+          yAxes: [{
+            scaleLabel: {
+              display: true,
+              labelString: 'value'
+            }
+          }]
         }
-      }],
-      yAxes: [{
-        scaleLabel: {
-          display: true,
-          labelString: 'value'
-        }
-      }]
+      }
+
+      );
+
     }
-  }
-  
-  );
+  })
+
+
+
+  //var ctx = document.getElementById('plotHistory');
+
 });
 
 function initMap() {
@@ -80,7 +83,7 @@ function initMap() {
       center: israel,
     });
     map.data.addGeoJson(response.plotsJson);
-    map.data.setStyle(function(feature) {
+    map.data.setStyle(function (feature) {
       var color = 'red';
       if (feature.getProperty('isColorful')) {
         color = feature.getProperty('color');
@@ -96,7 +99,7 @@ function initMap() {
       const coords = response.plotsJson.features[i].geometry.coordinates;
       console.log("coords", coords[0][1][0]);
       const latLng = new google.maps.LatLng(coords[0][0][1], coords[0][0][0]);
-      
+
       map.center = latLng;
       map.zoom = 10;
       /*new google.maps.Marker({
@@ -105,12 +108,14 @@ function initMap() {
       });*/
     };
 
-    
+
     map.data.addListener("click", (event) => {
       document.getElementById("PlotPage").textContent = event.feature.getProperty(
         "name"
       );
     });
   });
-  
+
 }
+
+
