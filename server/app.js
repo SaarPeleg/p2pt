@@ -13,7 +13,7 @@ app.use(function (req, res, next) {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");
 
-  // Request methods you wish to allow
+  // Request methods allowed
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, OPTIONS, PUT, PATCH, DELETE"
@@ -29,6 +29,7 @@ app.use(function (req, res, next) {
   next();
 });
 
+/// used to get plots file, convert it to json and send to client ///
 app.get("/apilogin", async (req, res) => {
   var response = [];
   var userIds = null;
@@ -79,6 +80,58 @@ app.get("/apilogin", async (req, res) => {
   }
   db.close();
 });
+
+
+// calculate banana plot request //
+app.get("/calculate", async (req, res) => {
+  var response = [];
+  var tosend={};
+  let db = new sqlite3.Database("./sqlitedatabase.db");
+  try {
+    db.each(
+      "SELECT * from PlotTempratures where userId = ? and plotName = ?",
+      [req.query.userId,req.query.plotName],
+      function (err, row) {
+        response.push(row);
+      },
+      function () {
+        // this callback is executed when the query completed
+        console.log("~~~New Calculation Request~~~");
+        
+        try {
+          if (response.length > 0) {
+            // calculations start here //
+            
+            // calculations end here, send data //
+            res.status(200).json({
+              status: "Success",
+              results: tosend,
+            });
+          } else {
+            console.error("Failed - error:" + req.query.userId);
+            res.status(200).json({
+              status: "Failed - error" + req.query.userId,
+            });
+          }
+          console.log("~~~End Calculation Request~~~");
+        } catch {
+          res.status(200).json({
+            status: "data not found in server",
+          });
+        }
+      }
+    );
+  } catch {
+    db.close();
+    res.status(200).json({
+      status: "data not found in server",
+    });
+    return console.log("ERROR");
+  }
+  db.close();
+});
+
+/// random colors for the plot lines ///
 function getRandomColor() {
   var letters = "0123456789ABCDEF";
   var color = "#";
@@ -87,6 +140,8 @@ function getRandomColor() {
   }
   return color;
 }
+
+/// get, process and send the date to be displayed in plot history ///
 app.get("/apigetplotdata", async (req, res) => {
   var response = {};
   response.raw = [];
@@ -113,10 +168,9 @@ app.get("/apigetplotdata", async (req, res) => {
         );
         for (var i = 0; i <= after - before; i++) {
           response.years.push(before - 0 + i);
-          //console.log(before-0+i);
         }
         general = response.raw.reduce(function (r, o) {
-          var k = o.product; // unique `loc` key
+          var k = o.product; 
           if (r[k] || (r[k] = []))
             r[k].push({
               year: o.year,
@@ -155,14 +209,13 @@ app.get("/apigetplotdata", async (req, res) => {
             for (var i = 0; i < general[key].length; i++) {
               dataset.data[general[key][i].year - before] =
               general[key][i].productAmount;
-              //console.log("test",key,prod,i,midarray[key][prod][i].productAmount);
             }
             datasetsg.push(dataset);
         }
         general={ name: "כללי", dataarray: datasetsg };
 
         midarray = response.raw.reduce(function (r, o) {
-          var k = o.plotName; // unique `loc` key
+          var k = o.plotName; 
           if (r[k] || (r[k] = []))
             r[k].push({
               year: o.year,
@@ -175,7 +228,7 @@ app.get("/apigetplotdata", async (req, res) => {
 
         for (var key in midarray) {
           midarray[key] = midarray[key].reduce(function (r, o) {
-            var k = o.label; // unique `loc` key
+            var k = o.label; 
             if (r[k] || (r[k] = []))
               r[k].push({
                 year: o.year,
@@ -203,13 +256,11 @@ app.get("/apigetplotdata", async (req, res) => {
             for (var i = 0; i < midarray[key][prod].length; i++) {
               dataset.data[midarray[key][prod][i].year - before] =
                 midarray[key][prod][i].productAmount;
-              //console.log("test",key,prod,i,midarray[key][prod][i].productAmount);
             }
             datasets.push(dataset);
           }
           tosend.push({ name: key, dataarray: datasets });
         }
-
         // this callback is executed when the query completed
         console.log("user id requested: " + req.query.userId);
         try {
@@ -251,4 +302,4 @@ app.get("/apigetplotdata", async (req, res) => {
   db.close();
 });
 
-app.listen(3000, () => console.log("server running on port 3000, "));
+app.listen(3000, () => console.log("server running on port 3000"));

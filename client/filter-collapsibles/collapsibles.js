@@ -1,3 +1,4 @@
+/// functionality for filtering plots from a list by their name ///
 function filterPlots() {
   var input, filter, ul, li, a, i, txtValue;
   input = document.getElementById("Searchbox");
