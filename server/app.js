@@ -80,6 +80,57 @@ app.get("/apilogin", async (req, res) => {
   }
   db.close();
 });
+
+
+// calculate banana plot request //
+app.get("/calculate", async (req, res) => {
+  var response = [];
+  var tosend={};
+  let db = new sqlite3.Database("./sqlitedatabase.db");
+  try {
+    db.each(
+      "SELECT * from PlotTempratures where userId = ? and plotName = ?",
+      [req.query.userId,req.query.plotName],
+      function (err, row) {
+        response.push(row);
+      },
+      function () {
+        // this callback is executed when the query completed
+        console.log("~~~New Calculation Request~~~");
+        
+        try {
+          if (response.length > 0) {
+            // calculations start here //
+            
+            // calculations end here, send data //
+            res.status(200).json({
+              status: "Success",
+              results: tosend,
+            });
+          } else {
+            console.error("Failed - error:" + req.query.userId);
+            res.status(200).json({
+              status: "Failed - error" + req.query.userId,
+            });
+          }
+          console.log("~~~End Calculation Request~~~");
+        } catch {
+          res.status(200).json({
+            status: "data not found in server",
+          });
+        }
+      }
+    );
+  } catch {
+    db.close();
+    res.status(200).json({
+      status: "data not found in server",
+    });
+    return console.log("ERROR");
+  }
+  db.close();
+});
+
 /// random colors for the plot lines ///
 function getRandomColor() {
   var letters = "0123456789ABCDEF";
@@ -251,4 +302,4 @@ app.get("/apigetplotdata", async (req, res) => {
   db.close();
 });
 
-app.listen(3000, () => console.log("server running on port 3000, "));
+app.listen(3000, () => console.log("server running on port 3000"));
