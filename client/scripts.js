@@ -46,13 +46,9 @@ $(document).ready(function () {
     var templateScript = Handlebars.compile(template);
     var html = templateScript(plotChartData);
     $("#PlotList").append(html);
-<<<<<<< HEAD
-    $(".canvasList").on("click", function () {
-=======
 
     /// list dropdown functionality and graphs ///
     $("li").on("click", function () {
->>>>>>> 1aa26dbacc4b55cff9dc61b63eb0af5029ace0a3
       $(this).children().last().slideToggle(200);
       toshow=$(this).children().first()[0].text.trim();
       if(toshow=="כללי"){
