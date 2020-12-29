@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>p2p</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.3.0/handlebars.min.js"></script>
+    <script src="./scripts.js"></script>
+    <script src="./filter-collapsibles/collapsibles.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=&callback=initMap&libraries=&v=weekly"
+      defer
+    ></script>
+  </head>
+  <body>
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">Plan2Plant</a>
+        </div>
+        <ul class="nav navbar-nav">
+          <li class=""><a href="index.html">Home</a></li>
+          <li class="active"><a href="#">Plot</a></li>
+        </ul>
+      </div>
+    </nav>
+    <!--The div element for the map -->
+    <div class="megacontainer">
+      <div id="map"></div>
+      <div id="PlotPage"></div>
+
+      <div>
+       <!--  <input
+          type="text"
+          id="Searchbox"
+          onkeyup="filterPlots()"
+          placeholder="Search plots.."
+          title="Type in a plot name"
+        />-->
+       <!-- <ul id="PlotList">
+          <li>
+            <a> כללי </a>
+            <div class="collapsible">
+              <div class="csstext">
+                <canvas id="plotHistory"></canvas>
+              </div>
+            </div>
+          </li>
+        </ul>-->
+      </div>
+    </div>
+   <!-- <script id="myplots-template" type="text/x-handlebars-template">
+      {{#each this}}
+        <li>
+          <a>
+            {{name}}
+          </a>
+          <div class="collapsible">
+            <div class="csstext">
+              <canvas id="{{name}}"></canvas>
+            </div>
+          </div>
+        </li>
+      {{/each}}
+    </script>-->
+  </body>
+</html>

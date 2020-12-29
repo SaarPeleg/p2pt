@@ -7,6 +7,30 @@ $(document).ready(function () {
   
   var arryOfPlotDatasets = [];
   var datasetAll;
+  var PlotsIdAndName=[];
+  var settings = {
+    url: "http://localhost:3000/apilogin?userId=0",
+    method: "GET",
+    timeout: 0,
+  };
+  $.ajax(settings).done(function (response) {
+    console.log(response);
+    for (let index = 0; index < response.plotsJson.features.length; index++) {
+      var tempPlot={
+        id : response.plotsJson.features[index].id,
+        name : response.plotsJson.features[index].properties.name
+      }
+      PlotsIdAndName.push(tempPlot);
+      
+    }
+    console.log("!!!!!!!!!!!!!!!!!",PlotsIdAndName);
+    var template = $('#plot-header-template').html();
+    var templateScript = Handlebars.compile(template);
+    var html = templateScript(PlotsIdAndName);
+    $("#myDropdown").append(html);
+  });
+
+
   var settings = {
     "url": "http://localhost:3000/apigetplotdata?userId=0",
     "method": "GET",
@@ -21,7 +45,7 @@ $(document).ready(function () {
     var templateScript = Handlebars.compile(template);
     var html = templateScript(plotChartData);
     $("#PlotList").append(html);
-    $("li").on("click", function () {
+    $(".canvasList").on("click", function () {
       $(this).children().last().slideToggle(200);
       toshow=$(this).children().first()[0].text.trim();
       if(toshow=="כללי"){
