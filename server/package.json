@@ -4,7 +4,7 @@
   "description": "blog server side",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "test": "mocha"
   },
   "author": "",
   "license": "ISC",
@@ -13,7 +13,12 @@
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "sqlite-sync": "^0.3.9",
     "sqlite3": "^4.2.0",
     "xmldom": "^0.4.0"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^8.2.1"
   }
 }

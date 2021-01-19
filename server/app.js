@@ -1,11 +1,30 @@
 const express = require("express");
 const tj = require("@tmcw/togeojson");
 const fs = require("fs");
+var sqlite = require("sqlite-sync"); //requiring
 const DOMParser = require("xmldom").DOMParser;
 var cors = require("cors");
 const sqlite3 = require("sqlite3").verbose();
 const bodyParser = require("body-parser");
 const app = express();
+var tempratures = [];
+var humidity = [];
+var WindSpeed = [];
+var DayLength = [];
+const monthNames = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+];
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -81,54 +100,11 @@ app.get("/apilogin", async (req, res) => {
   db.close();
 });
 
-
 // calculate banana plot request //
 app.get("/calculate", async (req, res) => {
   var response = [];
-  var tosend={};
+  var tosend = {};
   let db = new sqlite3.Database("./sqlitedatabase.db");
-  try {
-    db.each(
-      "SELECT * from PlotTempratures where userId = ? and plotName = ?",
-      [req.query.userId,req.query.plotName],
-      function (err, row) {
-        response.push(row);
-      },
-      function () {
-        // this callback is executed when the query completed
-        console.log("~~~New Calculation Request~~~");
-        
-        try {
-          if (response.length > 0) {
-            // calculations start here //
-            
-            // calculations end here, send data //
-            res.status(200).json({
-              status: "Success",
-              results: tosend,
-            });
-          } else {
-            console.error("Failed - error:" + req.query.userId);
-            res.status(200).json({
-              status: "Failed - error" + req.query.userId,
-            });
-          }
-          console.log("~~~End Calculation Request~~~");
-        } catch {
-          res.status(200).json({
-            status: "data not found in server",
-          });
-        }
-      }
-    );
-  } catch {
-    db.close();
-    res.status(200).json({
-      status: "data not found in server",
-    });
-    return console.log("ERROR");
-  }
-  db.close();
 });
 
 /// random colors for the plot lines ///
@@ -170,7 +146,7 @@ app.get("/apigetplotdata", async (req, res) => {
           response.years.push(before - 0 + i);
         }
         general = response.raw.reduce(function (r, o) {
-          var k = o.product; 
+          var k = o.product;
           if (r[k] || (r[k] = []))
             r[k].push({
               year: o.year,
@@ -189,33 +165,32 @@ app.get("/apigetplotdata", async (req, res) => {
               holder[d.year] = d.productAmount;
             }
           });
-          general[key]=[];
+          general[key] = [];
           for (var prop in holder) {
             general[key].push({ year: prop, productAmount: holder[prop] });
           }
-
         }
         var datasetsg = [];
-        for(var key in general){
-            var dataset = {};
-            dataset.data = [];
-            dataset.label = key;
-            dataset.showLine = true;
-            dataset.fill = false;
-            dataset.borderColor = getRandomColor();
-            for (var i = 0; i < response.years.length; i++) {
-              dataset.data.push(0);
-            }
-            for (var i = 0; i < general[key].length; i++) {
-              dataset.data[general[key][i].year - before] =
+        for (var key in general) {
+          var dataset = {};
+          dataset.data = [];
+          dataset.label = key;
+          dataset.showLine = true;
+          dataset.fill = false;
+          dataset.borderColor = getRandomColor();
+          for (var i = 0; i < response.years.length; i++) {
+            dataset.data.push(0);
+          }
+          for (var i = 0; i < general[key].length; i++) {
+            dataset.data[general[key][i].year - before] =
               general[key][i].productAmount;
-            }
-            datasetsg.push(dataset);
+          }
+          datasetsg.push(dataset);
         }
-        general={ name: "כללי", dataarray: datasetsg };
+        general = { name: "כללי", dataarray: datasetsg };
 
         midarray = response.raw.reduce(function (r, o) {
-          var k = o.plotName; 
+          var k = o.plotName;
           if (r[k] || (r[k] = []))
             r[k].push({
               year: o.year,
@@ -228,7 +203,7 @@ app.get("/apigetplotdata", async (req, res) => {
 
         for (var key in midarray) {
           midarray[key] = midarray[key].reduce(function (r, o) {
-            var k = o.label; 
+            var k = o.label;
             if (r[k] || (r[k] = []))
               r[k].push({
                 year: o.year,
@@ -302,4 +277,667 @@ app.get("/apigetplotdata", async (req, res) => {
   db.close();
 });
 
-app.listen(3000, () => console.log("server running on port 3000"));
+function SecretAlgorithm(date,plot) {
+  var startdate = new Date(date);
+  startdate.setDate(startdate.getDate()+1)//for planting
+  UpdateData(plot);
+  var tmp=Establishment(startdate);
+  if(tmp=="fail"){
+    console.log("failed to plant at date: "+date)
+    return "fail"
+  }
+  tmp=Suckers(tmp);
+  if(tmp=="fail"){
+    console.log("failed to plant at date: "+date)
+    return "fail"
+  }
+  tmp=Growth(tmp);
+  if(tmp=="fail"){
+    console.log("failed to plant at date: "+date)
+    return "fail"
+  }
+  tmp=Shooting(tmp);
+  if(tmp=="fail"){
+    console.log("failed to plant at date: "+date)
+    return "fail"
+  }
+  tmp=Hands(tmp);
+  if(tmp=="fail"){
+    console.log("failed to plant at date: "+date)
+    return "fail"
+  }
+  tmp=Bunch(tmp);
+  if(tmp=="fail"){
+    console.log("failed to plant at date: "+date)
+    return "fail"
+  }
+  console.log("real date",tmp)
+  return tmp;
+  //26.06.22
+}
+
+function IsLegalRange(min,max,val){
+  if(val>max||val<min){
+    return false;
+  } else {
+    return true;
+  }
+}
+
+
+function DayCalc(
+  startdate,
+  daysnum,
+  minTemp,
+  maxTemp,
+  baseDegrees,
+  degreeAbove,
+  degreeBelow, mindays,maxdays
+) {
+  ///// day temprature ////
+  var establishmentDate = new Date(startdate);
+  var permdays = daysnum;
+  var days = daysnum;
+  var establishmentCounter = 1;
+  //console.log(tempratures);
+  while (days > 1) {
+    var tempday =
+      tempratures[0][monthNames[establishmentDate.getMonth()] + "TDay"];
+    if (tempday < minTemp || tempday > maxTemp) {
+      return "fail";
+    }
+    var diff = baseDegrees - tempday; //1
+    if (diff < 0) {
+      diff = diff * degreeAbove;
+    } else if (degreeBelow == "dontcheck") {
+      diff = diff * degreeBelow;
+    }
+    days = days - 1 + diff / permdays;
+    establishmentCounter++;
+    establishmentDate.setDate(establishmentDate.getDate() + 1);
+  }
+  if(!IsLegalRange(mindays,maxdays,establishmentCounter)){
+    return "fail";
+  }
+  
+  establishmentCounter = establishmentCounter - permdays;
+  console.log("tday", establishmentCounter);
+  return establishmentCounter;
+}
+module.exports = DayCalc;
+
+function NightCalc(
+  startdate,
+  daysnum,
+  minTemp,
+  influence,
+  baseDegrees,
+  degreeA,
+  degreeB, mindays,maxdays
+) {
+  ///// night temprature ////
+  var establishmentDateNight = new Date(startdate);
+  var permdays = daysnum;
+  var days = daysnum;
+  var establishmentCounterNight = 1;
+  while (days > 1) {
+    var tempNight =
+      tempratures[0][monthNames[establishmentDateNight.getMonth()] + "TNight"];
+    if (tempNight < minTemp) {
+      return "fail";
+    }
+    var diff = baseDegrees - tempNight; //1
+    switch (influence.stepsNum) {
+      case 0:
+        if (diff > 0) {
+          diff = diff * degreeB;
+        } else {
+          diff = diff * degreeA;
+        }
+        break;
+      case 1:
+        if(tempNight >= baseDegrees){
+          diff=0
+        }else if(tempNight<baseDegrees&&tempNight>=influence.step1){
+          diff=diff*degreeA;
+        }else{
+          diff=diff*degreeB;
+        }
+        break;
+      case 2:
+        if(tempNight >= baseDegrees){
+          diff=0
+        }else if(tempNight<baseDegrees&&tempNight>=influence.step1){
+          diff=diff*degreeA;
+        }else if(tempNight<influence.step1&&tempNight>=influence.step2){
+          diff=diff*degreeB;
+        }else{
+          diff=diff*degreeC;
+        }
+        break;
+    }
+    days = days - 1 + diff / permdays;
+    establishmentCounterNight++;
+    establishmentDateNight.setDate(establishmentDateNight.getDate() + 1);
+  }
+
+  if(!IsLegalRange(mindays,maxdays,establishmentCounterNight)){
+    return "fail";
+  }
+  
+  establishmentCounterNight = establishmentCounterNight - permdays;
+  console.log("tnight", establishmentCounterNight);
+
+  return establishmentCounterNight;
+}
+module.exports = NightCalc;
+
+
+function RH(startdate,daysnum, minHu,steps, mindays, maxdays){
+  var permdays = daysnum;
+  var days = daysnum;
+  var establishmentDateHumid = new Date(startdate);
+  var establishmentCounterHumid = 1;
+  while (days > 1) {
+    var temp = humidity[0][monthNames[establishmentDateHumid.getMonth()]];
+    if (temp < minHu) {
+      return "fail";
+    }
+
+    var diff = 0;
+    if(steps.stepsNum==3){
+      if (temp == steps.A) {
+        diff = 0;
+      } else if (temp >= steps.B && temp < steps.A) {
+        diff = steps.Adata;
+      } else if (temp >= steps.C && temp < steps.B) {
+        diff = steps.Bdata;
+      }else if (temp < steps.C) {
+        diff = steps.Cdata;
+      }
+    }else{
+      if (temp == steps.A) {
+        diff = 0;
+      } else if (temp >= steps.B && temp < steps.A) {
+        diff = steps.Adata;
+      } else if (temp < steps.B) {
+        diff = steps.Bdata;
+      }
+    }
+    days = days - 1 + diff / permdays;
+    establishmentCounterHumid++;
+    establishmentDateHumid.setDate(establishmentDateHumid.getDate() + 1);
+  }
+  if(!IsLegalRange(mindays,maxdays,establishmentCounterHumid)){
+    return "fail";
+  }
+  establishmentCounterHumid = establishmentCounterHumid - permdays;
+  console.log("humid", establishmentCounterHumid);
+  return establishmentCounterHumid;
+
+}
+module.exports = RH;
+
+function DayLengthF(startdate,daysnum,minH,
+  maxH,hours, less,toadd, mindays,maxdays){
+  /// day hourslength ///
+  permdays = daysnum;
+  days = daysnum;
+  var establishmentDateLength = new Date(startdate);
+  var establishmentCounterLength = 1;
+  while (days > 1) {
+    var temp = DayLength[0][monthNames[establishmentDateLength.getMonth()]];
+    temp = parseFloat(temp.split(":")[0]) + parseFloat(temp.split(":")[1]) / 60;
+    //console.log("TEST TEMP LENGTH",monthNames[establishmentDateLength.getMonth()],temp);
+    if (temp > maxH || temp < minH) {
+      return "fail";
+    }
+    var diff = (hours - temp) * (1/less) * toadd;
+    //console.log(diff);
+    days = days - 1 + diff / permdays;
+    establishmentCounterLength++;
+    establishmentDateLength.setDate(establishmentDateLength.getDate() + 1);
+    //console.log(days);
+  }
+  if(!IsLegalRange(mindays,maxdays,establishmentCounterLength)){
+    return "fail";
+  }
+  establishmentCounterLength = establishmentCounterLength - permdays;
+  console.log("DAY LENGTH", establishmentCounterLength);
+  return establishmentCounterLength;
+}
+module.exports = DayLengthF;
+
+function WindF(startdate,daysnum,maxS,minS,noinf,eachN,extender,mindays,maxdays){
+  /// Wind ///
+  var permdays = daysnum;
+  var days = daysnum;
+  var establishmentDateWind = new Date(startdate);
+  var establishmentCounterWind = 1;
+  while (days > 1) {
+    var temp = WindSpeed[0][monthNames[establishmentDateWind.getMonth()]];
+    //console.log("TEST TEMP LENGTH",monthNames[establishmentDateLength.getMonth()],temp);
+    if (temp > maxS || temp < minS) {
+      return "fail";
+    }
+    var diff = 0;
+    if (temp > noinf) {
+      diff = ((temp - noinf) / eachN) * extender;
+    }
+
+    //console.log(diff);
+    days = days - 1 + diff / permdays;
+    establishmentCounterWind++;
+    establishmentDateWind.setDate(establishmentDateWind.getDate() + 1);
+    //console.log(days);
+  }
+  //console.log("Wind", establishmentCounterWind);
+  if(!IsLegalRange(mindays,maxdays,establishmentCounterWind)){
+    return "fail";
+  }
+  establishmentCounterWind = establishmentCounterWind - permdays;
+  console.log("Wind", establishmentCounterWind);
+  return establishmentCounterWind;
+  
+  
+}
+function Establishment(startdate) {
+  var date=startdate;
+  var mid=25;
+  var deltadays=DayCalc(date, 30, 13, 40, 28, 0.125, 0.3,25,45);
+  if(deltadays=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+mid+deltadays);
+  console.log("dateday",date)
+  var influence={
+    stepsNum: 0,
+    step1:0,
+    step2:0,
+    degreeC:0
+  }
+  
+  var deltanight=NightCalc(date,30,8,influence,26,0.08,0.04,25,45);
+  if(deltanight=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltanight);
+
+  var steps={
+    stepsNum:3,
+    A:80,
+    Adata:0.008,
+    B:65,
+    Bdata:0.016,
+    C:50,
+    Cdata:0.035,
+  }
+  var deltarh=RH(date,25,20,steps,25,45);
+  if(deltarh=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltarh);
+
+
+  var deltalength=DayLengthF(date,25,2,20,20,0.5,0.27,25,45)
+  if(deltalength=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltalength);
+
+  var deltawind=WindF(date,25,70,0,15,5,0.05,25,45);
+  if(deltawind=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltawind);
+  var tmpdate=new Date("2021-08-20")
+  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
+  if(!IsLegalRange(25,45,totaldays)){
+    return "fail";
+  }
+  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh,tmpdate)
+  return date;
+}
+
+function Suckers(startdate) {
+  var date=startdate;
+  var min=60;
+  var max=180
+  var mid=min;
+  var deltadays=DayCalc(date, 180, 12, 42, 12, 1.2, "dontcheck",min,max);
+  
+  if(deltadays=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+mid+deltadays);
+  var influence={
+    stepsNum: 1,
+    step1:12,
+    step2:0,
+    degreeC:0
+  }
+  
+  var deltanight=NightCalc(date,90,6,influence,20,0.51,1.31,min,max);
+  if(deltanight=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltanight);
+
+  var steps={
+    stepsNum:3,
+    A:80,
+    Adata:0.056,
+    B:65,
+    Bdata:0.112,
+    C:50,
+    Cdata:0.238,
+  }
+  var deltarh=RH(date,60,20,steps,min,max);
+  if(deltarh=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltarh);
+
+  var deltalength=DayLengthF(date,60,2,20,20,0.5,1.67,min,max)
+  if(deltalength=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltalength);
+
+  var deltawind=WindF(date,60,90,0,15,5,0.33,min,max);
+  if(deltawind=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltawind);
+  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
+  if(!IsLegalRange(min,max,totaldays)){
+    return "fail";
+  }
+  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh)
+  return date;
+}
+
+function Growth(startdate) {
+  var date=startdate;
+  var min=60;
+  var max=90
+  var mid=min;
+  var deltadays=DayCalc(date, 90, 12, 42, 12, 0.3, "dontcheck",min,max);
+  if(deltadays=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+mid+deltadays);
+  var influence={
+    stepsNum: 1,
+    step1:12,
+    step2:0,
+    degreeC:0
+  }
+  var daysN=0.25*(max-min)+min;
+  var deltanight=NightCalc(date, Math.ceil(daysN),6,influence,20,0.13,0.32,min,max);
+  if(deltanight=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltanight);
+
+  var steps={
+    stepsNum:3,
+    A:80,
+    Adata:0.014,
+    B:65,
+    Bdata:0.028,
+    C:50,
+    Cdata:0.06,
+  }
+  var deltarh=RH(date,min,20,steps,min,max);
+  if(deltarh=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltarh);
+
+  var deltalength=DayLengthF(date,min,2,20,20,0.5,0.42,min,max)
+  if(deltalength=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltalength);
+
+  var deltawind=WindF(date,min,90,0,15,5,0.08,min,max);
+  if(deltawind=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltawind);
+  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
+  console.log("totaldays",totaldays)
+  if(!IsLegalRange(min,max,totaldays)){
+    return "fail";
+  }
+  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh)
+  return date;
+}
+
+function Shooting(startdate) {
+  var date=startdate;
+  var min=15;
+  var max=30
+  var mid=min;
+  var deltadays=DayCalc(date, 30, 12, 42, 12, 0.15, "dontcheck",min,max);
+  if(deltadays=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+mid+deltadays);
+  var influence={
+    stepsNum: 1,
+    step1:12,
+    step2:0,
+    degreeC:0
+  }
+  var daysN=0.25*(max-min)+min;
+  var deltanight=NightCalc(date, Math.ceil(daysN),6,influence,20,0.06,0.15,min,max);
+  if(deltanight=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltanight);
+
+  var steps={
+    stepsNum:2,
+    A:65,
+    Adata:0.014,
+    B:50,
+    Bdata:0.028,
+    C:0,
+    Cdata:0,
+  }
+  var deltarh=RH(date,min,20,steps,min,max);
+  if(deltarh=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltarh);
+
+  var deltalength=DayLengthF(date,min,2,20,20,0.5,0.21,min,max)
+  if(deltalength=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltalength);
+
+  var deltawind=WindF(date,min,90,0,15,5,0.04,min,max);
+  if(deltawind=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltawind);
+  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
+  console.log("totaldays",totaldays)
+  if(!IsLegalRange(min,max,totaldays)){
+    return "fail";
+  }
+  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh)
+  return date;
+}
+
+function Hands(startdate) {
+  var date=startdate;
+  var min=15;
+  var max=30
+  var mid=min;
+  var deltadays=DayCalc(date, 30, 12, 42, 12, 0.15, "dontcheck",min,max);
+  if(deltadays=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+mid+deltadays);
+  var influence={
+    stepsNum: 1,
+    step1:12,
+    step2:0,
+    degreeC:0
+  }
+  var daysN=0.25*(max-min)+min;
+  var deltanight=NightCalc(date, Math.ceil(daysN),6,influence,20,0.06,0.15,min,max);
+  if(deltanight=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltanight);
+
+  var steps={
+    stepsNum:2,
+    A:65,
+    Adata:0.014,
+    B:50,
+    Bdata:0.028,
+    C:0,
+    Cdata:0,
+  }
+  var deltarh=RH(date,min,20,steps,min,max);
+  if(deltarh=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltarh);
+
+  var deltalength=DayLengthF(date,min,2,20,20,0.5,0.21,min,max)
+  if(deltalength=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltalength);
+
+  var deltawind=WindF(date,min,70,0,15,5,0.04,min,max);
+  if(deltawind=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltawind);
+  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
+  console.log("totaldays",totaldays)
+  if(!IsLegalRange(min,max,totaldays)){
+    return "fail";
+  }
+  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh)
+  return date;
+}
+
+function Bunch(startdate) {
+  var date=startdate;
+  var min=30;
+  var max=120
+  var mid=min;
+  var deltadays=DayCalc(date, max, 12, 42, 12, 0.9, "dontcheck",min,max);
+  if(deltadays=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+mid+deltadays);
+  var influence={
+    stepsNum: 2,
+    step1:20,
+    step2:12,
+    degreeC:0.85
+  }
+  var daysN=0.25*(max-min)+min;
+  var deltanight=NightCalc(date, Math.ceil(daysN),6,influence,27,0.17,0.34,min,max);
+  if(deltanight=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltanight);
+
+  var steps={
+    stepsNum:2,
+    A:65,
+    Adata:0.084,
+    B:50,
+    Bdata:0.17,
+    C:0,
+    Cdata:0,
+  }
+  var deltarh=RH(date,min,20,steps,min,max);
+  if(deltarh=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltarh);
+
+  var deltalength=DayLengthF(date,min,2,20,20,0.5,1.25,min,max)
+  if(deltalength=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltalength);
+
+  var deltawind=WindF(date,min,70,0,15,5,0.25,min,max);
+  if(deltawind=="fail"){
+    return "fail"
+  }
+  date.setDate(date.getDate()+deltawind);
+  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
+  console.log("totaldays",totaldays)
+  if(!IsLegalRange(min,max,totaldays)){
+    return "fail";
+  }
+  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh)
+  return date;
+}
+
+function UpdateData(plotid) {
+  sqlite.connect("./sqlitedatabase.db");
+
+  //Creating table - you can run any command
+  sqlite.run(
+    "SELECT * from PlotTempratures where plotId =" +
+      "'"+plotid+"'" +
+      ";",
+    function (res) {
+      if (res.error) throw res.error;
+      tempratures = res;
+    }
+  );
+  sqlite.run(
+    "SELECT * from PlotHumidity where plotId =" +
+    "'"+plotid+"'"  +
+      ";",
+    function (res) {
+      if (res.error) throw res.error;
+      humidity = res;
+    }
+  );
+  sqlite.run(
+    "SELECT * from WindSpeed where plotId =" + "'"+plotid+"'"  + ";",
+    function (res) {
+      if (res.error) throw res.error;
+      WindSpeed = res;
+    }
+  );
+  sqlite.run(
+    "SELECT * from DayLength where plotId =" + "'"+plotid+"'"  + ";",
+    function (res) {
+      if (res.error) throw res.error;
+      DayLength = res;
+    }
+  );
+  sqlite.close();
+}
+
+app.listen(3000, () => {
+  //UpdateData();
+  
+  SecretAlgorithm(new Date("2021-08-20"),"0EFF89E7F716F10FB533");
+  /*Establishment(new Date("2021-08-20"));
+  Suckers(new Date("2021-09-21"));
+  Growth(new Date("2022-01-26"));
+  Shooting(new Date("2022-04-03"));
+  Hands(new Date("2022-04-23"));
+  Bunch(new Date("2022-05-12"));*/
+
+  console.log("server running on port 3000");
+});

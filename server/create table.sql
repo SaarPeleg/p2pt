@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS Plots (
 );
 
 UPDATE Plots SET product='Avocado' where plotId='0EFF89E7F716F10FB533';*/
-drop table IF EXISTS PlotTempratures;
+/*drop table IF EXISTS PlotTempratures;
 
 CREATE TABLE IF NOT EXISTS PlotTempratures (
 	plotId Text PRIMARY KEY,
@@ -93,4 +93,65 @@ INSERT INTO `PlotHumidity` (plotId,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,d
 VALUES ("08BBA0314716F1122C26",75,73,66,56,51,52,52,54,53,54,57,68);
 
 INSERT INTO `PlotHumidity` (plotId,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec)
-VALUES ("0B43D4914116F111112C",68,70,65,57,52,55,59,61,58,55,55,64);
+VALUES ("0B43D4914116F111112C",68,70,65,57,52,55,59,61,58,55,55,64);*/
+
+drop table IF EXISTS WindSpeed;
+CREATE TABLE IF NOT EXISTS WindSpeed (
+	plotId Text PRIMARY KEY,
+	jan Real,
+	feb Real,
+	mar Real,
+	apr Real,
+	may Real,
+	jun Real,
+	jul Real,
+	aug Real,
+	sep Real,
+	oct Real,
+	nov Real,
+	dec Real
+);
+
+
+INSERT INTO `WindSpeed` (plotId,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec)
+VALUES ("0C0EB1BE0C16F10B47FD",15.8,16.2,11.5,17.28,13.95,15.3,14.4,15.7,16.2,14.4,13.5,11.1);
+
+INSERT INTO `WindSpeed` (plotId,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec)
+VALUES ("0EFF89E7F716F10FB533",15.8,16.2,11.5,17.28,13.95,15.3,14.4,15.7,16.2,14.4,13.5,11.1);
+
+INSERT INTO `WindSpeed` (plotId,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec)
+VALUES ("08BBA0314716F1122C26",24.3,23.55,24.6,25.31,25.6,27.9,27.68,25.52,29.84,27.68,20.84,23.36);
+
+INSERT INTO `WindSpeed` (plotId,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec)
+VALUES ("0B43D4914116F111112C",17,18.11,14.4,20.12,21.3,21.3,22.5,19.13,20.74,21.6,18,18.89);
+
+drop table IF EXISTS DayLength;
+CREATE TABLE IF NOT EXISTS DayLength (
+	plotId Text PRIMARY KEY,
+	jan Text,
+	feb Text,
+	mar Text,
+	apr Text,
+	may Text,
+	jun Text,
+	jul Text,
+	aug Text,
+	sep Text,
+	oct Text,
+	nov Text,
+	dec Text
+);
+
+delete from DayLength;
+
+INSERT INTO `DayLength` (plotId,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec)
+VALUES ("0C0EB1BE0C16F10B47FD","10:07","10:32","11:25","12:25","13:21","14:02","14:14","13:49","12:58","12:00","11:05","10:21");
+
+INSERT INTO `DayLength` (plotId,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec)
+VALUES ("0EFF89E7F716F10FB533","10:07","10:32","11:25","12:25","13:21","14:02","14:14","13:49","12:58","12:00","11:05","10:21");
+
+INSERT INTO `DayLength` (plotId,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec)
+VALUES ("08BBA0314716F1122C26","10:07","10:32","11:25","12:25","13:21","14:02","14:14","13:49","12:58","12:00","11:05","10:21");
+
+INSERT INTO `DayLength` (plotId,jan,feb,mar,apr,may,jun,jul,aug,sep,oct,nov,dec)
+VALUES ("0B43D4914116F111112C","10:07","10:32","11:25","12:25","13:21","14:02","14:14","13:49","12:58","12:00","11:05","10:21");
