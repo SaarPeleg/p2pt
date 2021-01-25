@@ -384,7 +384,6 @@ function SecretAlgorithm(date, plot) {
       bestDate = startdate;
       bestEnd = tmp;
       var start=new Date(bestDate);
-      start.setDate(start.getDate()-1);
       return_obj={
         Start:start,
         Planting: bestDate,
@@ -452,7 +451,6 @@ function SecretAlgorithm(date, plot) {
       bestDate = startdate;
       bestEnd = tmp;
       var start=new Date(bestDate);
-      start.setDate(start.getDate()-1);
       return_obj={
         Start:start,
         Planting: bestDate,
