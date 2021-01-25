@@ -19,13 +19,13 @@ $(document).ready(function () {
     IDofPlot = plotParams["plotID"];
     var plotTitle = decodeURIComponent(plotParams["plotName"]);
     var template = $('#headTitle-template').html();
-        var templateScript = Handlebars.compile(template);
-        var html = templateScript(plotTitle);
-        $("#headTitle").append(html);
+    var templateScript = Handlebars.compile(template);
+    var html = templateScript(plotTitle);
+    $("#headTitle").append(html);
 
 
 
-   
+
 });
 
 
@@ -45,18 +45,18 @@ function OnClickAlg() {
 
     $.ajax(settings).done(function (response) {
         console.log(response);
-        var tmparr=[];
-        
+        var tmparr = [];
+
         for (const [key, value] of Object.entries(response.result)) {
             console.log(key, value);
-            var TM = ((new Date(response.result[key])).getTime()/1000).toFixed(0);
-            var obj={
+            var TM = ((new Date(response.result[key])).getTime() / 1000).toFixed(0);
+            var obj = {
                 text: key,
                 date: response.result[key],
                 stamp: TM
             }
             tmparr.push(obj);
-          }
+        }
         var template = $('#timeline-template').html();
         var templateScript = Handlebars.compile(template);
         var html = templateScript(tmparr);

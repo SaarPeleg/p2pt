@@ -74,7 +74,7 @@
     <script id="plot-header-template" type="text/x-handlebars-template">
       <input type="text" placeholder="Search.." id="myInput" onkeyup="filterFunction()">  
       {{#each this}}
-      <a href="plot.html?{{this.name}}&{{this.id}}" id="{{this.id}}">{{this.name}}</a>
+      <a href="plot.html?plotName={{this.name}}&plotID={{this.id}}" id="{{this.id}}">{{this.name}}</a>
       {{/each}}
     </script>
 </body>
