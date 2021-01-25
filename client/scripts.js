@@ -66,6 +66,7 @@ $(document).ready(function () {
           };
         }
       });
+      
       $("li canvas").click(function (e) {
         e.stopPropagation();
       });
@@ -142,6 +143,27 @@ $(document).ready(function () {
         );
 
       }
+    }else if (window.location.href.indexOf("plot.html") != -1) {
+      var tmpurl = window.location.href;
+      var tmp1 = tmpurl.substring(tmpurl.indexOf("?") + 1);
+      var tmp2 = tmp1.split('&');
+      var plotParams = {};
+      for (let index = 0; index < tmp2.length; index++) {
+      var tmp3 = tmp2[index].split("=");
+      plotParams[tmp3[0]] = tmp3[1];
+      }
+      var idplot = plotParams["plotID"];
+      console.log("123123",idplot);
+      for (let i = 0; i < locationdata.plotsJson.features.length; i++) {
+        const coords = locationdata.plotsJson.features[i].geometry.coordinates;
+        console.log("ids",locationdata.plotsJson.features[i].id.trim() , idplot)
+        if (locationdata.plotsJson.features[i].id.trim() == idplot) {
+          const latLng = new google.maps.LatLng(coords[0][0][1], coords[0][0][0]);
+          map.setCenter(latLng)
+          map.setZoom(16);
+          break;
+        }
+      };
     }
 
 

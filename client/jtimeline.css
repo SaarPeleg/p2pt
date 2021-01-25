@@ -97,7 +97,7 @@
 }
 .jtimeline ul.jtimeline-events > li.jtimeline-event:nth-child(odd) > .jtimeline-event-label {
   top: -126.5px;
-  align-items: flex-end;
+  align-items:center;
 }
 .jtimeline ul.jtimeline-events > li.jtimeline-event:nth-child(odd) > .jtimeline-event-label:after {
   bottom: -11px;

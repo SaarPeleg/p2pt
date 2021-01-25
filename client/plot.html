@@ -47,15 +47,16 @@
     <div id="PlotPage"></div>
   </div>
 
-<div>
+<div><br>
   Date: <input type="text" id="datepicker">
   <button onclick="OnClickAlg()">מצא תאריך אופטימלי</button>
 </div>
 
-  <div id="jtimeline-plot" class="jtimeline"></div>
+  <div id="jtimeline-plot" style="top: 10px;" class="jtimeline"></div>
 
 
   <script id="timeline-template" type="text/x-handlebars-template">
+    
     <ul class="jtimeline-events">
       {{#each this}}
       <li class="jtimeline-event" data-timestamp="{{this.stamp}}">
