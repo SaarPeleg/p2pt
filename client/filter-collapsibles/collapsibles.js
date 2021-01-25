@@ -30,6 +30,8 @@ function filterFunction() {
     txtValue = a[i].textContent || a[i].innerText;
     if (txtValue.toUpperCase().indexOf(filter) > -1) {
       a[i].style.display = "";
+      //console.log("a",a[i]);
+      //$(a[i]).prop("href","plot.html?"+a[i]);
     } else {
       a[i].style.display = "none";
     }

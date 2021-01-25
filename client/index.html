@@ -53,18 +53,11 @@
         </li>
       </ul>
     </div>
-<<<<<<< HEAD
-  </div>
-  <script id="myplots-template" type="text/x-handlebars-template">
-    {{#each this}}
-        <li class="canvasList">
-=======
 
     <!--this is a template to be compiled by handlebars library to build list-->
     <script id="myplots-template" type="text/x-handlebars-template">
       {{#each this}}
         <li>
->>>>>>> 1aa26dbacc4b55cff9dc61b63eb0af5029ace0a3
           <a>
             {{name}}
           </a>
@@ -81,7 +74,7 @@
     <script id="plot-header-template" type="text/x-handlebars-template">
       <input type="text" placeholder="Search.." id="myInput" onkeyup="filterFunction()">  
       {{#each this}}
-      <a href="" id="{{this.id}}">{{this.name}}</a>
+      <a href="plot.html?{{this.name}}&{{this.id}}" id="{{this.id}}">{{this.name}}</a>
       {{/each}}
     </script>
 </body>

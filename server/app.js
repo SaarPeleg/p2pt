@@ -392,8 +392,8 @@ function SecretAlgorithm(date, plot) {
         Growth:groend,
         Shooting:shooend,
         Hands:hanend,
-        Bunch:bestEnd,
-        order:"Establishment,Suckers,Growth,Shooting,Hands,Bunch"
+        Bunch:bestEnd
+        
       };
     }
     index++;
@@ -459,8 +459,8 @@ function SecretAlgorithm(date, plot) {
         Growth:groend,
         Shooting:shooend,
         Hands:hanend,
-        Bunch:bestEnd,
-        order:"Establishment,Suckers,Growth,Shooting,Hands,Bunch"
+        Bunch:bestEnd
+        
       };
     }
     index++;
