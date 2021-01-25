@@ -11,6 +11,7 @@ var tempratures = [];
 var humidity = [];
 var WindSpeed = [];
 var DayLength = [];
+var delta = 0;
 const monthNames = [
   "jan",
   "feb",
@@ -104,7 +105,58 @@ app.get("/apilogin", async (req, res) => {
 app.get("/calculate", async (req, res) => {
   var response = [];
   var tosend = {};
+  console.log("~~~New Calculation Request~~~");
+  console.log("plot id requested: " + req.query.plotId);
+  console.log("start date: " + req.query.startDate);
   let db = new sqlite3.Database("./sqlitedatabase.db");
+  try {
+    db.each(
+      "SELECT * from Plots where plotId = ?",
+      [req.query.plotId],
+      function (err, row) {
+        response.push(row);
+      },
+      function () {
+        // this callback is executed when the query completed
+        try {
+          if (response.length > 0) {
+            //suc
+            var result = SecretAlgorithm(new Date(req.query.startDate), req.query.plotId);
+            if (result == "fail") {
+              console.error(
+                "Failed to find possible date to plant in plot with id" +
+                  req.query.plotId
+              );
+              res.status(200).json({
+                status:
+                  "Failed to find possible date to plant in plot with id" +
+                  req.query.plotId,
+              });
+            } else {
+              res.status(200).json({
+                status: "Success",
+                result: result,
+              });
+            }
+          } else {
+            console.error("Failed to find plot with id - " + req.query.plotId);
+            res.status(200).json({
+              status: "Failed to find plot with id - " + req.query.plotId,
+            });
+          }
+          console.log("~~~End Fetch Request~~~");
+        } catch {
+          res.status(200).json({
+            status: "Failed to find plot with id - " + req.query.plotId,
+          });
+        }
+      }
+    );
+  } catch {
+    db.close();
+    return console.log("ERROR");
+  }
+  db.close();
 });
 
 /// random colors for the plot lines ///
@@ -277,53 +329,158 @@ app.get("/apigetplotdata", async (req, res) => {
   db.close();
 });
 
-function SecretAlgorithm(date,plot) {
-  var startdate = new Date(date);
-  startdate.setDate(startdate.getDate()+1)//for planting
+function SecretAlgorithm(date, plot) {
+  //for(var i=0;i<(365/7);i++){}
   UpdateData(plot);
-  var tmp=Establishment(startdate);
-  if(tmp=="fail"){
-    console.log("failed to plant at date: "+date)
-    return "fail"
+  var fail = true;
+  var startdate;
+  var bestDate;
+  var weeks = 365 / 7;
+  var index = 0;
+  var return_obj={};
+  
+  while (fail && index < weeks) {
+    fail = false;
+    startdate = new Date(date);
+
+    var timew = (index * 7)+1;
+    
+    startdate.setDate(startdate.getDate() + timew);
+    var tmp = Establishment(startdate);
+    if (tmp == "fail") {
+      fail = true;
+    }
+    var estend=new Date(tmp);
+    tmp = Suckers(tmp);
+    if (tmp == "fail") {
+      fail = true;
+    }
+    var sucend=new Date(tmp);
+    tmp = Growth(tmp);
+    if (tmp == "fail") {
+      fail = true;
+    }
+    var groend=new Date(tmp);
+    tmp = Shooting(tmp);
+    if (tmp == "fail") {
+      fail = true;
+    }
+    var shooend=new Date(tmp);
+    tmp = Hands(tmp);
+    if (tmp == "fail") {
+      fail = true;
+    }
+    var hanend=new Date(tmp);
+    tmp = Bunch(tmp);
+    if (tmp == "fail") {
+      fail = true;
+    }
+    //console.log("real date", tmp);
+    //console.log("total delta", delta);
+    //var d = new Date(startdate);
+    //d.setDate(d.getDate() + delta + 206);
+    //console.log("d", d);
+    if (fail == false) {
+      bestDate = startdate;
+      bestEnd = tmp;
+      var start=new Date(bestDate);
+      start.setDate(start.getDate()-1);
+      return_obj={
+        Start:start,
+        Planting: bestDate,
+        Establishment:estend,
+        Suckers: sucend,
+        Growth:groend,
+        Shooting:shooend,
+        Hands:hanend,
+        Bunch:bestEnd,
+        order:"Establishment,Suckers,Growth,Shooting,Hands,Bunch"
+      };
+    }
+    index++;
   }
-  tmp=Suckers(tmp);
-  if(tmp=="fail"){
-    console.log("failed to plant at date: "+date)
-    return "fail"
+  if (!bestDate) {
+    return "fail";
   }
-  tmp=Growth(tmp);
-  if(tmp=="fail"){
-    console.log("failed to plant at date: "+date)
-    return "fail"
+  while (index < weeks) {
+    var fail = false;
+    startdate = new Date(date);
+    var timew = (index * 7)+1;
+    startdate.setDate(startdate.getDate() + timew);
+    UpdateData(plot);
+    var tmp = Establishment(startdate);
+    if (tmp == "fail") {
+      console.log("Establishment: failed to plant at date: " + startdate);
+      fail = true;
+    }
+    var estend=new Date(tmp);
+    tmp = Suckers(tmp);
+    if (tmp == "fail") {
+      console.log("Suckers: failed to plant at date: " + startdate);
+      fail = true;
+    }
+    var sucend=new Date(tmp);
+    tmp = Growth(tmp);
+    if (tmp == "fail") {
+      console.log("Growth: failed to plant at date: " + startdate);
+      fail = true;
+    }
+    var groend=new Date(tmp);
+    tmp = Shooting(tmp);
+    if (tmp == "fail") {
+      console.log("Shooting: failed to plant at date: " + startdate);
+      fail = true;
+    }
+    var shooend=new Date(tmp);
+    tmp = Hands(tmp);
+    if (tmp == "fail") {
+      console.log("Hands: failed to plant at date: " + startdate);
+      fail = true;
+    }
+    var hanend=new Date(tmp);
+    tmp = Bunch(tmp);
+    if (tmp == "fail") {
+      console.log("Bunch: failed to plant at date: " + startdate);
+      fail = true;
+    }
+    //console.log("real date", tmp);
+    //console.log("total delta", delta);
+    //var d = new Date(startdate);
+    //d.setDate(d.getDate() + delta + 206);
+    //console.log("d", d);
+    if (tmp < bestEnd && fail == false) {
+      bestDate = startdate;
+      bestEnd = tmp;
+      var start=new Date(bestDate);
+      start.setDate(start.getDate()-1);
+      return_obj={
+        Start:start,
+        Planting: bestDate,
+        Establishment:estend,
+        Suckers: sucend,
+        Growth:groend,
+        Shooting:shooend,
+        Hands:hanend,
+        Bunch:bestEnd,
+        order:"Establishment,Suckers,Growth,Shooting,Hands,Bunch"
+      };
+    }
+    index++;
   }
-  tmp=Shooting(tmp);
-  if(tmp=="fail"){
-    console.log("failed to plant at date: "+date)
-    return "fail"
-  }
-  tmp=Hands(tmp);
-  if(tmp=="fail"){
-    console.log("failed to plant at date: "+date)
-    return "fail"
-  }
-  tmp=Bunch(tmp);
-  if(tmp=="fail"){
-    console.log("failed to plant at date: "+date)
-    return "fail"
-  }
-  console.log("real date",tmp)
-  return tmp;
+  //var test2=new Date(bestDate);
+  //test2.setDate(test2.getDate()+);
+  console.log("best date", return_obj);
+  return return_obj;
   //26.06.22
 }
 
-function IsLegalRange(min,max,val){
-  if(val>max||val<min){
+function IsLegalRange(min, max, val) {
+  if (val > max || val < min) {
     return false;
   } else {
     return true;
   }
 }
-
 
 function DayCalc(
   startdate,
@@ -332,7 +489,9 @@ function DayCalc(
   maxTemp,
   baseDegrees,
   degreeAbove,
-  degreeBelow, mindays,maxdays
+  degreeBelow,
+  mindays,
+  maxdays
 ) {
   ///// day temprature ////
   var establishmentDate = new Date(startdate);
@@ -356,12 +515,12 @@ function DayCalc(
     establishmentCounter++;
     establishmentDate.setDate(establishmentDate.getDate() + 1);
   }
-  if(!IsLegalRange(mindays,maxdays,establishmentCounter)){
+  if (!IsLegalRange(mindays, maxdays, establishmentCounter)) {
     return "fail";
   }
-  
+
   establishmentCounter = establishmentCounter - permdays;
-  console.log("tday", establishmentCounter);
+  //console.log("tday", establishmentCounter);
   return establishmentCounter;
 }
 module.exports = DayCalc;
@@ -373,7 +532,9 @@ function NightCalc(
   influence,
   baseDegrees,
   degreeA,
-  degreeB, mindays,maxdays
+  degreeB,
+  mindays,
+  maxdays
 ) {
   ///// night temprature ////
   var establishmentDateNight = new Date(startdate);
@@ -396,23 +557,26 @@ function NightCalc(
         }
         break;
       case 1:
-        if(tempNight >= baseDegrees){
-          diff=0
-        }else if(tempNight<baseDegrees&&tempNight>=influence.step1){
-          diff=diff*degreeA;
-        }else{
-          diff=diff*degreeB;
+        if (tempNight >= baseDegrees) {
+          diff = 0;
+        } else if (tempNight < baseDegrees && tempNight >= influence.step1) {
+          diff = diff * degreeA;
+        } else {
+          diff = diff * degreeB;
         }
         break;
       case 2:
-        if(tempNight >= baseDegrees){
-          diff=0
-        }else if(tempNight<baseDegrees&&tempNight>=influence.step1){
-          diff=diff*degreeA;
-        }else if(tempNight<influence.step1&&tempNight>=influence.step2){
-          diff=diff*degreeB;
-        }else{
-          diff=diff*degreeC;
+        if (tempNight >= baseDegrees) {
+          diff = 0;
+        } else if (tempNight < baseDegrees && tempNight >= influence.step1) {
+          diff = diff * degreeA;
+        } else if (
+          tempNight < influence.step1 &&
+          tempNight >= influence.step2
+        ) {
+          diff = diff * degreeB;
+        } else {
+          diff = diff * influence.degreeC;
         }
         break;
     }
@@ -421,19 +585,18 @@ function NightCalc(
     establishmentDateNight.setDate(establishmentDateNight.getDate() + 1);
   }
 
-  if(!IsLegalRange(mindays,maxdays,establishmentCounterNight)){
+  if (!IsLegalRange(mindays, maxdays, establishmentCounterNight)) {
     return "fail";
   }
-  
+
   establishmentCounterNight = establishmentCounterNight - permdays;
-  console.log("tnight", establishmentCounterNight);
+  //console.log("tnight", establishmentCounterNight);
 
   return establishmentCounterNight;
 }
 module.exports = NightCalc;
 
-
-function RH(startdate,daysnum, minHu,steps, mindays, maxdays){
+function RH(startdate, daysnum, minHu, steps, mindays, maxdays) {
   var permdays = daysnum;
   var days = daysnum;
   var establishmentDateHumid = new Date(startdate);
@@ -445,17 +608,17 @@ function RH(startdate,daysnum, minHu,steps, mindays, maxdays){
     }
 
     var diff = 0;
-    if(steps.stepsNum==3){
+    if (steps.stepsNum == 3) {
       if (temp == steps.A) {
         diff = 0;
       } else if (temp >= steps.B && temp < steps.A) {
         diff = steps.Adata;
       } else if (temp >= steps.C && temp < steps.B) {
         diff = steps.Bdata;
-      }else if (temp < steps.C) {
+      } else if (temp < steps.C) {
         diff = steps.Cdata;
       }
-    }else{
+    } else {
       if (temp == steps.A) {
         diff = 0;
       } else if (temp >= steps.B && temp < steps.A) {
@@ -468,18 +631,26 @@ function RH(startdate,daysnum, minHu,steps, mindays, maxdays){
     establishmentCounterHumid++;
     establishmentDateHumid.setDate(establishmentDateHumid.getDate() + 1);
   }
-  if(!IsLegalRange(mindays,maxdays,establishmentCounterHumid)){
+  if (!IsLegalRange(mindays, maxdays, establishmentCounterHumid)) {
     return "fail";
   }
   establishmentCounterHumid = establishmentCounterHumid - permdays;
-  console.log("humid", establishmentCounterHumid);
+  //console.log("humid", establishmentCounterHumid);
   return establishmentCounterHumid;
-
 }
 module.exports = RH;
 
-function DayLengthF(startdate,daysnum,minH,
-  maxH,hours, less,toadd, mindays,maxdays){
+function DayLengthF(
+  startdate,
+  daysnum,
+  minH,
+  maxH,
+  hours,
+  less,
+  toadd,
+  mindays,
+  maxdays
+) {
   /// day hourslength ///
   permdays = daysnum;
   days = daysnum;
@@ -492,23 +663,33 @@ function DayLengthF(startdate,daysnum,minH,
     if (temp > maxH || temp < minH) {
       return "fail";
     }
-    var diff = (hours - temp) * (1/less) * toadd;
+    var diff = (hours - temp) * (1 / less) * toadd;
     //console.log(diff);
     days = days - 1 + diff / permdays;
     establishmentCounterLength++;
     establishmentDateLength.setDate(establishmentDateLength.getDate() + 1);
     //console.log(days);
   }
-  if(!IsLegalRange(mindays,maxdays,establishmentCounterLength)){
+  if (!IsLegalRange(mindays, maxdays, establishmentCounterLength)) {
     return "fail";
   }
   establishmentCounterLength = establishmentCounterLength - permdays;
-  console.log("DAY LENGTH", establishmentCounterLength);
+  //console.log("DAY LENGTH", establishmentCounterLength);
   return establishmentCounterLength;
 }
 module.exports = DayLengthF;
 
-function WindF(startdate,daysnum,maxS,minS,noinf,eachN,extender,mindays,maxdays){
+function WindF(
+  startdate,
+  daysnum,
+  maxS,
+  minS,
+  noinf,
+  eachN,
+  extender,
+  mindays,
+  maxdays
+) {
   /// Wind ///
   var permdays = daysnum;
   var days = daysnum;
@@ -532,361 +713,450 @@ function WindF(startdate,daysnum,maxS,minS,noinf,eachN,extender,mindays,maxdays)
     //console.log(days);
   }
   //console.log("Wind", establishmentCounterWind);
-  if(!IsLegalRange(mindays,maxdays,establishmentCounterWind)){
+  if (!IsLegalRange(mindays, maxdays, establishmentCounterWind)) {
     return "fail";
   }
   establishmentCounterWind = establishmentCounterWind - permdays;
-  console.log("Wind", establishmentCounterWind);
+  //console.log("Wind", establishmentCounterWind);
   return establishmentCounterWind;
-  
-  
 }
 function Establishment(startdate) {
-  var date=startdate;
-  var mid=25;
-  var deltadays=DayCalc(date, 30, 13, 40, 28, 0.125, 0.3,25,45);
-  if(deltadays=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+mid+deltadays);
-  console.log("dateday",date)
-  var influence={
-    stepsNum: 0,
-    step1:0,
-    step2:0,
-    degreeC:0
-  }
-  
-  var deltanight=NightCalc(date,30,8,influence,26,0.08,0.04,25,45);
-  if(deltanight=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltanight);
-
-  var steps={
-    stepsNum:3,
-    A:80,
-    Adata:0.008,
-    B:65,
-    Bdata:0.016,
-    C:50,
-    Cdata:0.035,
-  }
-  var deltarh=RH(date,25,20,steps,25,45);
-  if(deltarh=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltarh);
-
-
-  var deltalength=DayLengthF(date,25,2,20,20,0.5,0.27,25,45)
-  if(deltalength=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltalength);
-
-  var deltawind=WindF(date,25,70,0,15,5,0.05,25,45);
-  if(deltawind=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltawind);
-  var tmpdate=new Date("2021-08-20")
-  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
-  if(!IsLegalRange(25,45,totaldays)){
+  var date = startdate;
+  var toreturn = new Date(startdate);
+  var mid = 25;
+  var deltadays = DayCalc(date, 30, 13, 40, 28, 0.125, 0.3, 25, 45);
+  if (deltadays == "fail") {
     return "fail";
   }
-  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh,tmpdate)
-  return date;
+  //toreturn.setDate(toreturn.getDate() + mid + deltadays);
+  //console.log("dateday", toreturn);
+  var influence = {
+    stepsNum: 0,
+    step1: 0,
+    step2: 0,
+    degreeC: 0,
+  };
+
+  var deltanight = NightCalc(date, 30, 8, influence, 26, 0.08, 0.04, 25, 45);
+  if (deltanight == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltanight);
+  var steps = {
+    stepsNum: 3,
+    A: 80,
+    Adata: 0.008,
+    B: 65,
+    Bdata: 0.016,
+    C: 50,
+    Cdata: 0.035,
+  };
+  var deltarh = RH(date, 25, 20, steps, 25, 45);
+  if (deltarh == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltarh);
+
+  var deltalength = DayLengthF(date, 25, 2, 20, 20, 0.5, 0.27, 25, 45);
+  if (deltalength == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltalength);
+
+  var deltawind = WindF(date, 25, 70, 0, 15, 5, 0.05, 25, 45);
+  if (deltawind == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltawind);
+  var totaldays =
+    mid + deltawind + deltadays + deltalength + deltanight + deltarh;
+  toreturn.setDate(toreturn.getDate() + totaldays);
+  if (!IsLegalRange(25, 45, totaldays)) {
+    return "fail";
+  }
+  delta += deltawind + deltadays + deltalength + deltanight + deltarh;
+  console.log(
+    "Establishment date",
+    toreturn /*, "",
+    deltawind + deltadays + deltalength + deltanight + deltarh*/
+  );
+  return toreturn;
 }
 
 function Suckers(startdate) {
-  var date=startdate;
-  var min=60;
-  var max=180
-  var mid=min;
-  var deltadays=DayCalc(date, 180, 12, 42, 12, 1.2, "dontcheck",min,max);
-  
-  if(deltadays=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+mid+deltadays);
-  var influence={
-    stepsNum: 1,
-    step1:12,
-    step2:0,
-    degreeC:0
-  }
-  
-  var deltanight=NightCalc(date,90,6,influence,20,0.51,1.31,min,max);
-  if(deltanight=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltanight);
+  var date = startdate;
 
-  var steps={
-    stepsNum:3,
-    A:80,
-    Adata:0.056,
-    B:65,
-    Bdata:0.112,
-    C:50,
-    Cdata:0.238,
-  }
-  var deltarh=RH(date,60,20,steps,min,max);
-  if(deltarh=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltarh);
+  var toreturn = new Date(startdate);
+  var min = 60;
+  var max = 180;
+  var mid = min;
+  var deltadays = DayCalc(date, 180, 12, 42, 12, 1.2, "dontcheck", min, max);
 
-  var deltalength=DayLengthF(date,60,2,20,20,0.5,1.67,min,max)
-  if(deltalength=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltalength);
-
-  var deltawind=WindF(date,60,90,0,15,5,0.33,min,max);
-  if(deltawind=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltawind);
-  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
-  if(!IsLegalRange(min,max,totaldays)){
+  if (deltadays == "fail") {
     return "fail";
   }
-  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh)
-  return date;
+  //toreturn.setDate(toreturn.getDate() + mid + deltadays);
+  var influence = {
+    stepsNum: 1,
+    step1: 12,
+    step2: 0,
+    degreeC: 0,
+  };
+
+  var deltanight = NightCalc(date, 90, 6, influence, 20, 0.51, 1.31, min, max);
+  if (deltanight == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltanight);
+
+  var steps = {
+    stepsNum: 3,
+    A: 80,
+    Adata: 0.056,
+    B: 65,
+    Bdata: 0.112,
+    C: 50,
+    Cdata: 0.238,
+  };
+  var deltarh = RH(date, 60, 20, steps, min, max);
+  if (deltarh == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltarh);
+
+  var deltalength = DayLengthF(date, 60, 2, 20, 20, 0.5, 1.67, min, max);
+  if (deltalength == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltalength);
+
+  var deltawind = WindF(date, 60, 90, 0, 15, 5, 0.33, min, max);
+  if (deltawind == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltawind);
+  var totaldays =
+    mid + deltawind + deltadays + deltalength + deltanight + deltarh;
+  toreturn.setDate(toreturn.getDate() + totaldays);
+  if (!IsLegalRange(min, max, totaldays)) {
+    return "fail";
+  }
+  delta += deltawind + deltadays + deltalength + deltanight + deltarh;
+
+  console.log(
+    "Suckers date",
+    toreturn/*,
+    deltawind + deltadays + deltalength + deltanight + deltarh*/
+  );
+  return toreturn;
 }
 
 function Growth(startdate) {
-  var date=startdate;
-  var min=60;
-  var max=90
-  var mid=min;
-  var deltadays=DayCalc(date, 90, 12, 42, 12, 0.3, "dontcheck",min,max);
-  if(deltadays=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+mid+deltadays);
-  var influence={
-    stepsNum: 1,
-    step1:12,
-    step2:0,
-    degreeC:0
-  }
-  var daysN=0.25*(max-min)+min;
-  var deltanight=NightCalc(date, Math.ceil(daysN),6,influence,20,0.13,0.32,min,max);
-  if(deltanight=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltanight);
-
-  var steps={
-    stepsNum:3,
-    A:80,
-    Adata:0.014,
-    B:65,
-    Bdata:0.028,
-    C:50,
-    Cdata:0.06,
-  }
-  var deltarh=RH(date,min,20,steps,min,max);
-  if(deltarh=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltarh);
-
-  var deltalength=DayLengthF(date,min,2,20,20,0.5,0.42,min,max)
-  if(deltalength=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltalength);
-
-  var deltawind=WindF(date,min,90,0,15,5,0.08,min,max);
-  if(deltawind=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltawind);
-  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
-  console.log("totaldays",totaldays)
-  if(!IsLegalRange(min,max,totaldays)){
+  var date = startdate;
+  var toreturn = new Date(startdate);
+  var min = 60;
+  var max = 90;
+  var mid = min;
+  var deltadays = DayCalc(date, 90, 12, 42, 12, 0.3, "dontcheck", min, max);
+  if (deltadays == "fail") {
     return "fail";
   }
-  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh)
-  return date;
+  //toreturn.setDate(toreturn.getDate() + mid + deltadays);
+  var influence = {
+    stepsNum: 1,
+    step1: 12,
+    step2: 0,
+    degreeC: 0,
+  };
+  var daysN = 0.25 * (max - min) + min;
+  var deltanight = NightCalc(
+    date,
+    Math.ceil(daysN),
+    6,
+    influence,
+    20,
+    0.13,
+    0.32,
+    min,
+    max
+  );
+  if (deltanight == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltanight);
+
+  var steps = {
+    stepsNum: 3,
+    A: 80,
+    Adata: 0.014,
+    B: 65,
+    Bdata: 0.028,
+    C: 50,
+    Cdata: 0.06,
+  };
+  var deltarh = RH(date, min, 20, steps, min, max);
+  if (deltarh == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltarh);
+
+  var deltalength = DayLengthF(date, min, 2, 20, 20, 0.5, 0.42, min, max);
+  if (deltalength == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltalength);
+
+  var deltawind = WindF(date, min, 90, 0, 15, 5, 0.08, min, max);
+  if (deltawind == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltawind);
+  var totaldays =
+    mid + deltawind + deltadays + deltalength + deltanight + deltarh;
+
+  toreturn.setDate(toreturn.getDate() + totaldays);
+  //console.log("totaldays", totaldays);
+  if (!IsLegalRange(min, max, totaldays)) {
+    return "fail";
+  }
+  console.log(
+    "Growth date",
+    toreturn/*,
+    deltawind + deltadays + deltalength + deltanight + deltarh*/
+  );
+  delta += deltawind + deltadays + deltalength + deltanight + deltarh;
+
+  return toreturn;
 }
 
 function Shooting(startdate) {
-  var date=startdate;
-  var min=15;
-  var max=30
-  var mid=min;
-  var deltadays=DayCalc(date, 30, 12, 42, 12, 0.15, "dontcheck",min,max);
-  if(deltadays=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+mid+deltadays);
-  var influence={
-    stepsNum: 1,
-    step1:12,
-    step2:0,
-    degreeC:0
-  }
-  var daysN=0.25*(max-min)+min;
-  var deltanight=NightCalc(date, Math.ceil(daysN),6,influence,20,0.06,0.15,min,max);
-  if(deltanight=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltanight);
-
-  var steps={
-    stepsNum:2,
-    A:65,
-    Adata:0.014,
-    B:50,
-    Bdata:0.028,
-    C:0,
-    Cdata:0,
-  }
-  var deltarh=RH(date,min,20,steps,min,max);
-  if(deltarh=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltarh);
-
-  var deltalength=DayLengthF(date,min,2,20,20,0.5,0.21,min,max)
-  if(deltalength=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltalength);
-
-  var deltawind=WindF(date,min,90,0,15,5,0.04,min,max);
-  if(deltawind=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltawind);
-  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
-  console.log("totaldays",totaldays)
-  if(!IsLegalRange(min,max,totaldays)){
+  var date = startdate;
+  var toreturn = new Date(startdate);
+  var min = 15;
+  var max = 30;
+  var mid = min;
+  var deltadays = DayCalc(date, 30, 12, 42, 12, 0.15, "dontcheck", min, max);
+  if (deltadays == "fail") {
     return "fail";
   }
-  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh)
-  return date;
+  //toreturn.setDate(toreturn.getDate() + mid + deltadays);
+  var influence = {
+    stepsNum: 1,
+    step1: 12,
+    step2: 0,
+    degreeC: 0,
+  };
+  var daysN = 0.25 * (max - min) + min;
+  var deltanight = NightCalc(
+    date,
+    Math.ceil(daysN),
+    6,
+    influence,
+    20,
+    0.06,
+    0.15,
+    min,
+    max
+  );
+  if (deltanight == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltanight);
+
+  var steps = {
+    stepsNum: 2,
+    A: 65,
+    Adata: 0.014,
+    B: 50,
+    Bdata: 0.028,
+    C: 0,
+    Cdata: 0,
+  };
+  var deltarh = RH(date, min, 20, steps, min, max);
+  if (deltarh == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltarh);
+
+  var deltalength = DayLengthF(date, min, 2, 20, 20, 0.5, 0.21, min, max);
+  if (deltalength == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltalength);
+
+  var deltawind = WindF(date, min, 90, 0, 15, 5, 0.04, min, max);
+  if (deltawind == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltawind);
+  var totaldays =
+    mid + deltawind + deltadays + deltalength + deltanight + deltarh;
+
+  toreturn.setDate(toreturn.getDate() + totaldays);
+  //console.log("totaldays", totaldays);
+  if (!IsLegalRange(min, max, totaldays)) {
+    return "fail";
+  }
+  console.log(
+    "Shooting date",
+    toreturn/*,
+    deltawind + deltadays + deltalength + deltanight + deltarh*/
+  );
+  delta += deltawind + deltadays + deltalength + deltanight + deltarh;
+  return toreturn;
 }
 
 function Hands(startdate) {
-  var date=startdate;
-  var min=15;
-  var max=30
-  var mid=min;
-  var deltadays=DayCalc(date, 30, 12, 42, 12, 0.15, "dontcheck",min,max);
-  if(deltadays=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+mid+deltadays);
-  var influence={
-    stepsNum: 1,
-    step1:12,
-    step2:0,
-    degreeC:0
-  }
-  var daysN=0.25*(max-min)+min;
-  var deltanight=NightCalc(date, Math.ceil(daysN),6,influence,20,0.06,0.15,min,max);
-  if(deltanight=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltanight);
-
-  var steps={
-    stepsNum:2,
-    A:65,
-    Adata:0.014,
-    B:50,
-    Bdata:0.028,
-    C:0,
-    Cdata:0,
-  }
-  var deltarh=RH(date,min,20,steps,min,max);
-  if(deltarh=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltarh);
-
-  var deltalength=DayLengthF(date,min,2,20,20,0.5,0.21,min,max)
-  if(deltalength=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltalength);
-
-  var deltawind=WindF(date,min,70,0,15,5,0.04,min,max);
-  if(deltawind=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltawind);
-  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
-  console.log("totaldays",totaldays)
-  if(!IsLegalRange(min,max,totaldays)){
+  var date = startdate;
+  var toreturn = new Date(startdate);
+  var min = 15;
+  var max = 30;
+  var mid = min;
+  var deltadays = DayCalc(date, 30, 12, 42, 12, 0.15, "dontcheck", min, max);
+  if (deltadays == "fail") {
     return "fail";
   }
-  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh)
-  return date;
+  //toreturn.setDate(toreturn.getDate() + mid + deltadays);
+  var influence = {
+    stepsNum: 1,
+    step1: 12,
+    step2: 0,
+    degreeC: 0,
+  };
+  var daysN = 0.25 * (max - min) + min;
+  var deltanight = NightCalc(
+    date,
+    Math.ceil(daysN),
+    6,
+    influence,
+    20,
+    0.06,
+    0.15,
+    min,
+    max
+  );
+  if (deltanight == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltanight);
+
+  var steps = {
+    stepsNum: 2,
+    A: 65,
+    Adata: 0.014,
+    B: 50,
+    Bdata: 0.028,
+    C: 0,
+    Cdata: 0,
+  };
+  var deltarh = RH(date, min, 20, steps, min, max);
+  if (deltarh == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltarh);
+
+  var deltalength = DayLengthF(date, min, 2, 20, 20, 0.5, 0.21, min, max);
+  if (deltalength == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltalength);
+
+  var deltawind = WindF(date, min, 70, 0, 15, 5, 0.04, min, max);
+  if (deltawind == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltawind);
+  var totaldays =
+    mid + deltawind + deltadays + deltalength + deltanight + deltarh;
+  //console.log("totaldays", totaldays);
+  toreturn.setDate(toreturn.getDate() + totaldays);
+  if (!IsLegalRange(min, max, totaldays)) {
+    return "fail";
+  }
+  console.log(
+    "Hands date",
+    toreturn/*,
+    deltawind + deltadays + deltalength + deltanight + deltarh*/
+  );
+  delta += deltawind + deltadays + deltalength + deltanight + deltarh;
+  return toreturn;
 }
 
 function Bunch(startdate) {
-  var date=startdate;
-  var min=30;
-  var max=120
-  var mid=min;
-  var deltadays=DayCalc(date, max, 12, 42, 12, 0.9, "dontcheck",min,max);
-  if(deltadays=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+mid+deltadays);
-  var influence={
-    stepsNum: 2,
-    step1:20,
-    step2:12,
-    degreeC:0.85
-  }
-  var daysN=0.25*(max-min)+min;
-  var deltanight=NightCalc(date, Math.ceil(daysN),6,influence,27,0.17,0.34,min,max);
-  if(deltanight=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltanight);
-
-  var steps={
-    stepsNum:2,
-    A:65,
-    Adata:0.084,
-    B:50,
-    Bdata:0.17,
-    C:0,
-    Cdata:0,
-  }
-  var deltarh=RH(date,min,20,steps,min,max);
-  if(deltarh=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltarh);
-
-  var deltalength=DayLengthF(date,min,2,20,20,0.5,1.25,min,max)
-  if(deltalength=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltalength);
-
-  var deltawind=WindF(date,min,70,0,15,5,0.25,min,max);
-  if(deltawind=="fail"){
-    return "fail"
-  }
-  date.setDate(date.getDate()+deltawind);
-  var totaldays=mid+deltawind+deltadays+deltalength+deltanight+deltarh;
-  console.log("totaldays",totaldays)
-  if(!IsLegalRange(min,max,totaldays)){
+  var date = startdate;
+  var toreturn = new Date(startdate);
+  var min = 30;
+  var max = 120;
+  var mid = min;
+  var deltadays = DayCalc(date, max, 12, 42, 12, 0.9, "dontcheck", min, max);
+  if (deltadays == "fail") {
     return "fail";
   }
-  console.log("date",date,deltawind+deltadays+deltalength+deltanight+deltarh)
-  return date;
+  //toreturn.setDate(toreturn.getDate() + mid + deltadays);
+  var influence = {
+    stepsNum: 2,
+    step1: 20,
+    step2: 12,
+    degreeC: 0.85,
+  };
+  //console.log(influence.degreeC);
+  var daysN = 0.25 * (max - min) + min;
+  var deltanight = NightCalc(
+    date,
+    Math.ceil(daysN),
+    6,
+    influence,
+    27,
+    0.17,
+    0.34,
+    min,
+    max
+  );
+  if (deltanight == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltanight);
+
+  var steps = {
+    stepsNum: 2,
+    A: 65,
+    Adata: 0.084,
+    B: 50,
+    Bdata: 0.17,
+    C: 0,
+    Cdata: 0,
+  };
+  var deltarh = RH(date, min, 20, steps, min, max);
+  if (deltarh == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltarh);
+
+  var deltalength = DayLengthF(date, min, 2, 20, 20, 0.5, 1.25, min, max);
+  if (deltalength == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltalength);
+
+  var deltawind = WindF(date, min, 70, 0, 15, 5, 0.25, min, max);
+  if (deltawind == "fail") {
+    return "fail";
+  }
+  //toreturn.setDate(toreturn.getDate() + deltawind);
+  var totaldays =
+    mid + deltawind + deltadays + deltalength + deltanight + deltarh;
+  toreturn.setDate(toreturn.getDate() + totaldays);
+  //console.log("totaldays", totaldays);
+  if (!IsLegalRange(min, max, totaldays)) {
+    return "fail";
+  }
+  console.log(
+    "Bunch date",
+    date/*,
+    deltawind + deltadays + deltalength + deltanight + deltarh*/
+  );
+  delta += deltawind + deltadays + deltalength + deltanight + deltarh;
+  return toreturn;
 }
 
 function UpdateData(plotid) {
@@ -894,32 +1164,28 @@ function UpdateData(plotid) {
 
   //Creating table - you can run any command
   sqlite.run(
-    "SELECT * from PlotTempratures where plotId =" +
-      "'"+plotid+"'" +
-      ";",
+    "SELECT * from PlotTempratures where plotId =" + "'" + plotid + "'" + ";",
     function (res) {
       if (res.error) throw res.error;
       tempratures = res;
     }
   );
   sqlite.run(
-    "SELECT * from PlotHumidity where plotId =" +
-    "'"+plotid+"'"  +
-      ";",
+    "SELECT * from PlotHumidity where plotId =" + "'" + plotid + "'" + ";",
     function (res) {
       if (res.error) throw res.error;
       humidity = res;
     }
   );
   sqlite.run(
-    "SELECT * from WindSpeed where plotId =" + "'"+plotid+"'"  + ";",
+    "SELECT * from WindSpeed where plotId =" + "'" + plotid + "'" + ";",
     function (res) {
       if (res.error) throw res.error;
       WindSpeed = res;
     }
   );
   sqlite.run(
-    "SELECT * from DayLength where plotId =" + "'"+plotid+"'"  + ";",
+    "SELECT * from DayLength where plotId =" + "'" + plotid + "'" + ";",
     function (res) {
       if (res.error) throw res.error;
       DayLength = res;
@@ -930,8 +1196,11 @@ function UpdateData(plotid) {
 
 app.listen(3000, () => {
   //UpdateData();
-  
-  SecretAlgorithm(new Date("2021-08-20"),"0EFF89E7F716F10FB533");
+
+  /*SecretAlgorithm(
+    new Date("2021-08-20" ),
+    "0EFF89E7F716F10FB533"
+  );*/
   /*Establishment(new Date("2021-08-20"));
   Suckers(new Date("2021-09-21"));
   Growth(new Date("2022-01-26"));
