@@ -26,6 +26,7 @@ const monthNames = [
   "nov",
   "dec",
 ];
+//module.exports={monthNames,delta,DayLength,WindSpeed,humidity,tempratures};
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -335,7 +336,7 @@ function SecretAlgorithm(date, plot) {
   var fail = true;
   var startdate;
   var bestDate;
-  var weeks = 365 / 7;
+  var weeks = 365/* / 7*/;
   var index = 0;
   var return_obj={};
   
@@ -343,14 +344,17 @@ function SecretAlgorithm(date, plot) {
     fail = false;
     startdate = new Date(date);
 
-    var timew = (index * 7)+1;
+    var timew = (index/* * 7*/)+1;
     
     startdate.setDate(startdate.getDate() + timew);
+    console.log("startdate",startdate)
     var tmp = Establishment(startdate);
     if (tmp == "fail") {
+      console.log("fail");
       fail = true;
     }
     var estend=new Date(tmp);
+    console.log("test123123123",estend)
     tmp = Suckers(tmp);
     if (tmp == "fail") {
       fail = true;
@@ -401,10 +405,11 @@ function SecretAlgorithm(date, plot) {
   if (!bestDate) {
     return "fail";
   }
+  console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~second loop~~~~~~~~~",startdate)
   while (index < weeks) {
     var fail = false;
     startdate = new Date(date);
-    var timew = (index * 7)+1;
+    var timew = (index/* * 7*/)+1;
     startdate.setDate(startdate.getDate() + timew);
     UpdateData(plot);
     var tmp = Establishment(startdate);
@@ -498,8 +503,7 @@ function DayCalc(
   var establishmentCounter = 1;
   //console.log(tempratures);
   while (days > 1) {
-    var tempday =
-      tempratures[0][monthNames[establishmentDate.getMonth()] + "TDay"];
+    var tempday = tempratures[0][monthNames[establishmentDate.getMonth()] + "TDay"];
     if (tempday < minTemp || tempday > maxTemp) {
       return "fail";
     }
@@ -521,7 +525,6 @@ function DayCalc(
   //console.log("tday", establishmentCounter);
   return establishmentCounter;
 }
-module.exports = DayCalc;
 
 function NightCalc(
   startdate,
@@ -543,6 +546,7 @@ function NightCalc(
     var tempNight =
       tempratures[0][monthNames[establishmentDateNight.getMonth()] + "TNight"];
     if (tempNight < minTemp) {
+      //console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~failed night calc")
       return "fail";
     }
     var diff = baseDegrees - tempNight; //1
@@ -592,7 +596,7 @@ function NightCalc(
 
   return establishmentCounterNight;
 }
-module.exports = NightCalc;
+//module.exports = NightCalc;
 
 function RH(startdate, daysnum, minHu, steps, mindays, maxdays) {
   var permdays = daysnum;
@@ -636,7 +640,7 @@ function RH(startdate, daysnum, minHu, steps, mindays, maxdays) {
   //console.log("humid", establishmentCounterHumid);
   return establishmentCounterHumid;
 }
-module.exports = RH;
+//module.exports = RH;
 
 function DayLengthF(
   startdate,
@@ -675,7 +679,7 @@ function DayLengthF(
   //console.log("DAY LENGTH", establishmentCounterLength);
   return establishmentCounterLength;
 }
-module.exports = DayLengthF;
+//module.exports = DayLengthF;
 
 function WindF(
   startdate,
@@ -1191,20 +1195,21 @@ function UpdateData(plotid) {
   );
   sqlite.close();
 }
+//module.exports.UpdateData = UpdateData;
 
 app.listen(3000, () => {
-  //UpdateData();
-
+  //UpdateData("0C0EB1BE0C16F10B47FD");
+  //console.log(DayCalc(new Date("2021-08-20"), 30, 13, 40, 28, 0.125, 0.3, 25, 45))
   /*SecretAlgorithm(
-    new Date("2021-08-20" ),
-    "0EFF89E7F716F10FB533"
+    //new Date("2021-08-20" ),
+    //"0EFF89E7F716F10FB533"
   );*/
   /*Establishment(new Date("2021-08-20"));
-  Suckers(new Date("2021-09-21"));
-  Growth(new Date("2022-01-26"));
-  Shooting(new Date("2022-04-03"));
-  Hands(new Date("2022-04-23"));
-  Bunch(new Date("2022-05-12"));*/
+  //Suckers(new Date("2021-09-21"));
+  //Growth(new Date("2022-01-26"));
+  //Shooting(new Date("2022-04-03"));
+  //Hands(new Date("2022-04-23"));
+  //Bunch(new Date("2022-05-12"));*/
 
   console.log("server running on port 3000");
 });

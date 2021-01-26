@@ -18,6 +18,7 @@ $(document).ready(function () {
     console.log("plotParams", plotParams);
     IDofPlot = plotParams["plotID"];
     var plotTitle = decodeURIComponent(plotParams["plotName"]);
+    $("#titleOfPage").text(plotTitle)
     var template = $('#headTitle-template').html();
     var templateScript = Handlebars.compile(template);
     var html = templateScript(plotTitle);
@@ -35,7 +36,13 @@ $(function () {
 
 
 function OnClickAlg() {
+    
     var date = $("#datepicker").val();
+    if(Object.is(Date.parse(date), NaN)){
+        alert("invalid date")
+        return;
+    }
+    
     console.log("date::::::", date)
     var settings = {
         "url": "http://localhost:3000/calculate?plotId=" + IDofPlot + "&startDate=" + date,
@@ -60,6 +67,7 @@ function OnClickAlg() {
         var template = $('#timeline-template').html();
         var templateScript = Handlebars.compile(template);
         var html = templateScript(tmparr);
+        $("#jtimeline-plot").html("");
         $("#jtimeline-plot").append(html);
         $(function () {
             $('#jtimeline-plot').jTimeline();
